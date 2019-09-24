@@ -16,6 +16,22 @@
 		F3DC8D0A2337768A00C8AE1D /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = F3DC8D092337768A00C8AE1D /* main.m */; };
 		F3DC8D142337768A00C8AE1D /* NAudioPlayerTests.m in Sources */ = {isa = PBXBuildFile; fileRef = F3DC8D132337768A00C8AE1D /* NAudioPlayerTests.m */; };
 		F3DC8D1F2337768A00C8AE1D /* NAudioPlayerUITests.m in Sources */ = {isa = PBXBuildFile; fileRef = F3DC8D1E2337768A00C8AE1D /* NAudioPlayerUITests.m */; };
+		F3DC8D3323377A5800C8AE1D /* MP3Sample.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = F3DC8D2D23377A5800C8AE1D /* MP3Sample.mp3 */; };
+		F3DC8D3423377A5800C8AE1D /* abc.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = F3DC8D2E23377A5800C8AE1D /* abc.mp3 */; };
+		F3DC8D3523377A5800C8AE1D /* MiAmor.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = F3DC8D2F23377A5800C8AE1D /* MiAmor.mp3 */; };
+		F3DC8D3623377A5800C8AE1D /* CAFSample.caf in Resources */ = {isa = PBXBuildFile; fileRef = F3DC8D3023377A5800C8AE1D /* CAFSample.caf */; };
+		F3DC8D3723377A5800C8AE1D /* M4ASample.m4a in Resources */ = {isa = PBXBuildFile; fileRef = F3DC8D3123377A5800C8AE1D /* M4ASample.m4a */; };
+		F3DC8D3823377A5800C8AE1D /* 0fe2a7e9c51012210eaaa1e2b103b1b1.m4a in Resources */ = {isa = PBXBuildFile; fileRef = F3DC8D3223377A5800C8AE1D /* 0fe2a7e9c51012210eaaa1e2b103b1b1.m4a */; };
+		F3DC8D3A23377A6D00C8AE1D /* pf.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = F3DC8D3923377A6D00C8AE1D /* pf.mp3 */; };
+		F3DC8D3C23377A7C00C8AE1D /* deadwithlife.flac in Resources */ = {isa = PBXBuildFile; fileRef = F3DC8D3B23377A7C00C8AE1D /* deadwithlife.flac */; };
+		F3DC8D43233799DC00C8AE1D /* AVAudioSession+RouteUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = F3DC8D40233799DC00C8AE1D /* AVAudioSession+RouteUtils.m */; };
+		F3DC8D44233799DC00C8AE1D /* NAudioSession.m in Sources */ = {isa = PBXBuildFile; fileRef = F3DC8D41233799DC00C8AE1D /* NAudioSession.m */; };
+		F3DC8D4A23379AA600C8AE1D /* NAudioPlayer.m in Sources */ = {isa = PBXBuildFile; fileRef = F3DC8D4923379AA600C8AE1D /* NAudioPlayer.m */; };
+		F3DC8D5323379D4700C8AE1D /* NAudioQueue.m in Sources */ = {isa = PBXBuildFile; fileRef = F3DC8D5223379D4700C8AE1D /* NAudioQueue.m */; };
+		F3DC8D5823379DE500C8AE1D /* NParseAudioData.m in Sources */ = {isa = PBXBuildFile; fileRef = F3DC8D5623379DE500C8AE1D /* NParseAudioData.m */; };
+		F3DC8D5923379DE500C8AE1D /* NAudioFileStream.m in Sources */ = {isa = PBXBuildFile; fileRef = F3DC8D5723379DE500C8AE1D /* NAudioFileStream.m */; };
+		F3DC8D6A2337C3F100C8AE1D /* CommonUtil.m in Sources */ = {isa = PBXBuildFile; fileRef = F3DC8D682337C3F100C8AE1D /* CommonUtil.m */; };
+		F3DC8D70233858CB00C8AE1D /* NAudioBuffer.m in Sources */ = {isa = PBXBuildFile; fileRef = F3DC8D6F233858CB00C8AE1D /* NAudioBuffer.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -54,6 +70,30 @@
 		F3DC8D1A2337768A00C8AE1D /* NAudioPlayerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NAudioPlayerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F3DC8D1E2337768A00C8AE1D /* NAudioPlayerUITests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NAudioPlayerUITests.m; sourceTree = "<group>"; };
 		F3DC8D202337768A00C8AE1D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		F3DC8D2D23377A5800C8AE1D /* MP3Sample.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = MP3Sample.mp3; sourceTree = "<group>"; };
+		F3DC8D2E23377A5800C8AE1D /* abc.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = abc.mp3; sourceTree = "<group>"; };
+		F3DC8D2F23377A5800C8AE1D /* MiAmor.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = MiAmor.mp3; sourceTree = "<group>"; };
+		F3DC8D3023377A5800C8AE1D /* CAFSample.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = CAFSample.caf; sourceTree = "<group>"; };
+		F3DC8D3123377A5800C8AE1D /* M4ASample.m4a */ = {isa = PBXFileReference; lastKnownFileType = file; path = M4ASample.m4a; sourceTree = "<group>"; };
+		F3DC8D3223377A5800C8AE1D /* 0fe2a7e9c51012210eaaa1e2b103b1b1.m4a */ = {isa = PBXFileReference; lastKnownFileType = file; path = 0fe2a7e9c51012210eaaa1e2b103b1b1.m4a; sourceTree = "<group>"; };
+		F3DC8D3923377A6D00C8AE1D /* pf.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = pf.mp3; sourceTree = "<group>"; };
+		F3DC8D3B23377A7C00C8AE1D /* deadwithlife.flac */ = {isa = PBXFileReference; lastKnownFileType = file; path = deadwithlife.flac; sourceTree = "<group>"; };
+		F3DC8D3F233799DC00C8AE1D /* NAudioSession.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NAudioSession.h; sourceTree = "<group>"; };
+		F3DC8D40233799DC00C8AE1D /* AVAudioSession+RouteUtils.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "AVAudioSession+RouteUtils.m"; sourceTree = "<group>"; };
+		F3DC8D41233799DC00C8AE1D /* NAudioSession.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NAudioSession.m; sourceTree = "<group>"; };
+		F3DC8D42233799DC00C8AE1D /* AVAudioSession+RouteUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "AVAudioSession+RouteUtils.h"; sourceTree = "<group>"; };
+		F3DC8D4823379AA600C8AE1D /* NAudioPlayer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NAudioPlayer.h; sourceTree = "<group>"; };
+		F3DC8D4923379AA600C8AE1D /* NAudioPlayer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NAudioPlayer.m; sourceTree = "<group>"; };
+		F3DC8D5123379D4700C8AE1D /* NAudioQueue.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NAudioQueue.h; sourceTree = "<group>"; };
+		F3DC8D5223379D4700C8AE1D /* NAudioQueue.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NAudioQueue.m; sourceTree = "<group>"; };
+		F3DC8D5423379DE500C8AE1D /* NAudioFileStream.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NAudioFileStream.h; sourceTree = "<group>"; };
+		F3DC8D5523379DE500C8AE1D /* NParseAudioData.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NParseAudioData.h; sourceTree = "<group>"; };
+		F3DC8D5623379DE500C8AE1D /* NParseAudioData.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NParseAudioData.m; sourceTree = "<group>"; };
+		F3DC8D5723379DE500C8AE1D /* NAudioFileStream.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NAudioFileStream.m; sourceTree = "<group>"; };
+		F3DC8D682337C3F100C8AE1D /* CommonUtil.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CommonUtil.m; sourceTree = "<group>"; };
+		F3DC8D692337C3F100C8AE1D /* CommonUtil.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CommonUtil.h; sourceTree = "<group>"; };
+		F3DC8D6E233858CB00C8AE1D /* NAudioBuffer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NAudioBuffer.h; sourceTree = "<group>"; };
+		F3DC8D6F233858CB00C8AE1D /* NAudioBuffer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NAudioBuffer.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -104,6 +144,8 @@
 		F3DC8CF62337768800C8AE1D /* NAudioPlayer */ = {
 			isa = PBXGroup;
 			children = (
+				F3DC8D3D23377AB600C8AE1D /* Player */,
+				F3DC8D2C23377A5800C8AE1D /* resource */,
 				F3DC8CF72337768800C8AE1D /* AppDelegate.h */,
 				F3DC8CF82337768800C8AE1D /* AppDelegate.m */,
 				F3DC8CFA2337768800C8AE1D /* SceneDelegate.h */,
@@ -135,6 +177,92 @@
 				F3DC8D202337768A00C8AE1D /* Info.plist */,
 			);
 			path = NAudioPlayerUITests;
+			sourceTree = "<group>";
+		};
+		F3DC8D2C23377A5800C8AE1D /* resource */ = {
+			isa = PBXGroup;
+			children = (
+				F3DC8D3B23377A7C00C8AE1D /* deadwithlife.flac */,
+				F3DC8D3923377A6D00C8AE1D /* pf.mp3 */,
+				F3DC8D2D23377A5800C8AE1D /* MP3Sample.mp3 */,
+				F3DC8D2E23377A5800C8AE1D /* abc.mp3 */,
+				F3DC8D2F23377A5800C8AE1D /* MiAmor.mp3 */,
+				F3DC8D3023377A5800C8AE1D /* CAFSample.caf */,
+				F3DC8D3123377A5800C8AE1D /* M4ASample.m4a */,
+				F3DC8D3223377A5800C8AE1D /* 0fe2a7e9c51012210eaaa1e2b103b1b1.m4a */,
+			);
+			path = resource;
+			sourceTree = "<group>";
+		};
+		F3DC8D3D23377AB600C8AE1D /* Player */ = {
+			isa = PBXGroup;
+			children = (
+				F3DC8D6D233858B900C8AE1D /* NAudioBuffer */,
+				F3DC8D672337C3F100C8AE1D /* utils */,
+				F3DC8D4723379A8F00C8AE1D /* NAudioPlayer */,
+				F3DC8D4623379A5300C8AE1D /* NAudioFileStream */,
+				F3DC8D4523379A3200C8AE1D /* NAudioQueue */,
+				F3DC8D3E233799DC00C8AE1D /* NAudioSession */,
+			);
+			path = Player;
+			sourceTree = "<group>";
+		};
+		F3DC8D3E233799DC00C8AE1D /* NAudioSession */ = {
+			isa = PBXGroup;
+			children = (
+				F3DC8D3F233799DC00C8AE1D /* NAudioSession.h */,
+				F3DC8D41233799DC00C8AE1D /* NAudioSession.m */,
+				F3DC8D42233799DC00C8AE1D /* AVAudioSession+RouteUtils.h */,
+				F3DC8D40233799DC00C8AE1D /* AVAudioSession+RouteUtils.m */,
+			);
+			path = NAudioSession;
+			sourceTree = "<group>";
+		};
+		F3DC8D4523379A3200C8AE1D /* NAudioQueue */ = {
+			isa = PBXGroup;
+			children = (
+				F3DC8D5123379D4700C8AE1D /* NAudioQueue.h */,
+				F3DC8D5223379D4700C8AE1D /* NAudioQueue.m */,
+			);
+			path = NAudioQueue;
+			sourceTree = "<group>";
+		};
+		F3DC8D4623379A5300C8AE1D /* NAudioFileStream */ = {
+			isa = PBXGroup;
+			children = (
+				F3DC8D5423379DE500C8AE1D /* NAudioFileStream.h */,
+				F3DC8D5723379DE500C8AE1D /* NAudioFileStream.m */,
+				F3DC8D5523379DE500C8AE1D /* NParseAudioData.h */,
+				F3DC8D5623379DE500C8AE1D /* NParseAudioData.m */,
+			);
+			path = NAudioFileStream;
+			sourceTree = "<group>";
+		};
+		F3DC8D4723379A8F00C8AE1D /* NAudioPlayer */ = {
+			isa = PBXGroup;
+			children = (
+				F3DC8D4823379AA600C8AE1D /* NAudioPlayer.h */,
+				F3DC8D4923379AA600C8AE1D /* NAudioPlayer.m */,
+			);
+			path = NAudioPlayer;
+			sourceTree = "<group>";
+		};
+		F3DC8D672337C3F100C8AE1D /* utils */ = {
+			isa = PBXGroup;
+			children = (
+				F3DC8D692337C3F100C8AE1D /* CommonUtil.h */,
+				F3DC8D682337C3F100C8AE1D /* CommonUtil.m */,
+			);
+			path = utils;
+			sourceTree = "<group>";
+		};
+		F3DC8D6D233858B900C8AE1D /* NAudioBuffer */ = {
+			isa = PBXGroup;
+			children = (
+				F3DC8D6E233858CB00C8AE1D /* NAudioBuffer.h */,
+				F3DC8D6F233858CB00C8AE1D /* NAudioBuffer.m */,
+			);
+			path = NAudioBuffer;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -240,8 +368,16 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F3DC8D3C23377A7C00C8AE1D /* deadwithlife.flac in Resources */,
+				F3DC8D3A23377A6D00C8AE1D /* pf.mp3 in Resources */,
 				F3DC8D072337768A00C8AE1D /* LaunchScreen.storyboard in Resources */,
+				F3DC8D3723377A5800C8AE1D /* M4ASample.m4a in Resources */,
+				F3DC8D3623377A5800C8AE1D /* CAFSample.caf in Resources */,
+				F3DC8D3523377A5800C8AE1D /* MiAmor.mp3 in Resources */,
+				F3DC8D3823377A5800C8AE1D /* 0fe2a7e9c51012210eaaa1e2b103b1b1.m4a in Resources */,
+				F3DC8D3323377A5800C8AE1D /* MP3Sample.mp3 in Resources */,
 				F3DC8D042337768A00C8AE1D /* Assets.xcassets in Resources */,
+				F3DC8D3423377A5800C8AE1D /* abc.mp3 in Resources */,
 				F3DC8D022337768800C8AE1D /* Main.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -267,9 +403,17 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F3DC8D5823379DE500C8AE1D /* NParseAudioData.m in Sources */,
 				F3DC8CFF2337768800C8AE1D /* ViewController.m in Sources */,
 				F3DC8CF92337768800C8AE1D /* AppDelegate.m in Sources */,
+				F3DC8D70233858CB00C8AE1D /* NAudioBuffer.m in Sources */,
+				F3DC8D43233799DC00C8AE1D /* AVAudioSession+RouteUtils.m in Sources */,
+				F3DC8D4A23379AA600C8AE1D /* NAudioPlayer.m in Sources */,
+				F3DC8D5923379DE500C8AE1D /* NAudioFileStream.m in Sources */,
+				F3DC8D6A2337C3F100C8AE1D /* CommonUtil.m in Sources */,
 				F3DC8D0A2337768A00C8AE1D /* main.m in Sources */,
+				F3DC8D5323379D4700C8AE1D /* NAudioQueue.m in Sources */,
+				F3DC8D44233799DC00C8AE1D /* NAudioSession.m in Sources */,
 				F3DC8CFC2337768800C8AE1D /* SceneDelegate.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -442,11 +586,12 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = Z2PP5K6334;
 				INFOPLIST_FILE = NAudioPlayer/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.burgeon.NAudioPlayer;
+				PRODUCT_BUNDLE_IDENTIFIER = com.burgeon.NAudioSession;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -459,11 +604,12 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = Z2PP5K6334;
 				INFOPLIST_FILE = NAudioPlayer/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.burgeon.NAudioPlayer;
+				PRODUCT_BUNDLE_IDENTIFIER = com.burgeon.NAudioSession;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
