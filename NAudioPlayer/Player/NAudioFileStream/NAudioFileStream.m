@@ -16,7 +16,7 @@
 {
 @private
     BOOL _discontinuous;
-    AudioFileStreamID _audioFileStreamID; ///
+//    AudioFileStreamID _audioFileStreamID; ///
     
     SInt64 _dataOffset;
     NSTimeInterval _packetDuration; // 当前已读取了多少个packet
@@ -38,6 +38,9 @@
 @property (nonatomic, assign) BOOL readyToProducePackets;
 
 @property (nonatomic, assign, readwrite) AudioStreamBasicDescription audioStreamBasicDescription;
+
+@property (nonatomic, assign, readwrite) AudioFileStreamID audioFileStreamID;
+
 //@property (nonatomic, strong) NSFileHandle *audioFileHandle;
 //@property (nonatomic, strong) NSData *audioFileData; // 每次读取到的文件数据
 
@@ -55,7 +58,7 @@
 {
     self = [super init];
     if (self) {
-        self.path = path;
+        _path = path;
         _fileLength = fileLength;
         [self createAudioFileStream];
     }return self;
@@ -72,11 +75,11 @@
          5. outAudioFileStream：AudioFileStreamID实例，需保存供后续使用
      */
     
-    
     OSStatus status = AudioFileStreamOpen((__bridge void *)self, NAudioFileStreamPropertyListener, NAudioFileStreamPacketCallBack, 0, &_audioFileStreamID);
     
     if (status != noErr) {
         _audioFileStreamID = NULL;
+        NSLog(@"_audioFileStreamID is null");
     }
     
     NSError *error;
@@ -87,10 +90,16 @@
 - (void)parseData:(NSData *)data
 {
     /// 解析数据
-    NSLog(@"每次读取data.length: %d", (UInt32)data.length);
-    OSStatus error = AudioFileStreamParseBytes(_audioFileStreamID, (UInt32)data.length, data.bytes, 0);
+    /// NSLog(@"每次读取data.length: %u", (unsigned int)data.length);
     
-    if (error != noErr) {
+    if (!_audioFileStreamID) {
+        NSLog(@"audioFileStreamID is null");
+        return;
+    }
+    
+    OSStatus status = AudioFileStreamParseBytes(_audioFileStreamID, (UInt32)data.length, data.bytes, 0);
+    
+    if (status != noErr) {
         NSLog(@"AudioFileStreamParseBytes 失败");
     }
     
@@ -274,7 +283,7 @@
             OSStatus status = AudioFileStreamGetProperty(_audioFileStreamID, kAudioFileStreamProperty_DataFormat, &asbdSize, &_audioStreamBasicDescription);
             
             if (status == noErr) {
-                //            NSLog(@"audioDataByteCount : %u, byteCountSize: %u",audioDataByteCount,byteCountSize);
+                // NSLog(@"audioDataByteCount : %u, byteCountSize: %u",audioDataByteCount,byteCountSize);
             }
             
             /// 首先需要计算每个packet对应的时长
@@ -291,40 +300,38 @@
         Boolean outWriteable;
         UInt32 formatListSize;
         OSStatus status = AudioFileStreamGetPropertyInfo(_audioFileStreamID, kAudioFileStreamProperty_FormatList, &formatListSize, &outWriteable);
-        if (status == noErr){
-            AudioFormatListItem *formatList = malloc(formatListSize);
-            OSStatus status = AudioFileStreamGetProperty(_audioFileStreamID, kAudioFileStreamProperty_FormatList, &formatListSize, formatList);
-            if (status == noErr){
-                UInt32 supportedFormatsSize;
-                status = AudioFormatGetPropertyInfo(kAudioFormatProperty_DecodeFormatIDs, 0, NULL, &supportedFormatsSize);
-                if (status != noErr){
-                    free(formatList);
-                    return;
-                }
-                
-                UInt32 supportedFormatCount = supportedFormatsSize / sizeof(OSType);
-                OSType *supportedFormats = (OSType *)malloc(supportedFormatsSize);
-                status = AudioFormatGetProperty(kAudioFormatProperty_DecodeFormatIDs, 0, NULL, &supportedFormatsSize, supportedFormats);
-                if (status != noErr){
-                    free(formatList);
-                    free(supportedFormats);
-                    return;
-                }
-                
-                for (int i = 0; i * sizeof(AudioFormatListItem) < formatListSize; i += sizeof(AudioFormatListItem)){
-                    AudioStreamBasicDescription format = formatList[i].mASBD;
-                    for (UInt32 j = 0; j < supportedFormatCount; ++j){
-                        if (format.mFormatID == supportedFormats[j]){
-                            _audioStreamBasicDescription = format;
-                            [self calculatePacketDuration];
-                            break;
-                        }
-                    }
-                }
-                free(supportedFormats);
-            }
-            free(formatList);
+        if (status)
+        {
+//            [self failWithErrorCode:AS_FILE_STREAM_GET_PROPERTY_FAILED];
+            return;
         }
+        
+        AudioFormatListItem *formatList = malloc(formatListSize);
+        status = AudioFileStreamGetProperty(_audioFileStreamID, kAudioFileStreamProperty_FormatList, &formatListSize, formatList);
+        if (status)
+        {
+            free(formatList);
+//            [self failWithErrorCode:AS_FILE_STREAM_GET_PROPERTY_FAILED];
+            return;
+        }
+
+        for (int i = 0; i * sizeof(AudioFormatListItem) < formatListSize; i += sizeof(AudioFormatListItem))
+        {
+            AudioStreamBasicDescription pasbd = formatList[i].mASBD;
+            if (pasbd.mFormatID == kAudioFormatMPEG4AAC_HE ||
+                pasbd.mFormatID == kAudioFormatMPEG4AAC_HE_V2)
+            {
+                //
+                // We've found HE-AAC, remember this to tell the audio queue
+                // when we construct it.
+                //
+#if !TARGET_IPHONE_SIMULATOR
+                _audioStreamBasicDescription = pasbd;
+#endif
+                break;
+            }
+        }
+        free(formatList);
         
         NSLog(@">>>>>>> kAudioFileStreamProperty_FormatList <<<<<<<");
     }
@@ -341,29 +348,35 @@
     }
     
     if (inNumberBytes == 0 || inNumberPackets == 0) {
+        NSLog(@"inNumberBytes: %d, inNumberPackets: %d", inNumberBytes, inNumberPackets);
         return;
     }
     
 //    NSLog(@">>>>>>> handleAudioFileStreamPackets <<<<<<<");
 
-    BOOL deletePackDesc = NO;
+//    BOOL deletePackDesc = NO;
+    
+//    if (packetDescriptions == NULL) {
+//        NSLog(@"packetDescriptions is null");
+//        deletePackDesc = YES;
+//        UInt32 packetSize = inNumberBytes / inNumberPackets;
+//        AudioStreamPacketDescription *descriptions = (AudioStreamPacketDescription *)malloc(sizeof(AudioStreamPacketDescription)*inNumberPackets);
+//        for (int i = 0; i < inNumberPackets; i++) {
+//            UInt32 packetOffset = packetSize * i;
+//            descriptions[i].mStartOffset  = packetOffset;
+//            descriptions[i].mVariableFramesInPacket = 0;
+//            if (i == inNumberPackets-1) {
+//                descriptions[i].mDataByteSize = inNumberPackets-packetOffset;
+//            }else{
+//                descriptions[i].mDataByteSize = packetSize;
+//            }
+//        }
+//        packetDescriptions = descriptions;
+//    }
     
     if (packetDescriptions == NULL) {
         NSLog(@"packetDescriptions is null");
-        deletePackDesc = YES;
-        UInt32 packetSize = inNumberBytes / inNumberPackets;
-        AudioStreamPacketDescription *descriptions = (AudioStreamPacketDescription *)malloc(sizeof(AudioStreamPacketDescription)*inNumberPackets);
-        for (int i = 0; i < inNumberPackets; i++) {
-            UInt32 packetOffset = packetSize * i;
-            descriptions[i].mStartOffset  = packetOffset;
-            descriptions[i].mVariableFramesInPacket = 0;
-            if (i == inNumberPackets-1) {
-                descriptions[i].mDataByteSize = inNumberPackets-packetOffset;
-            }else{
-                descriptions[i].mDataByteSize = packetSize;
-            }
-        }
-        packetDescriptions = descriptions;
+        return;
     }
     
     _inNumberBytes += inNumberBytes; /// 当前已读取的packet的总文件大小 （这两个变量用来计算平均码率）
@@ -371,39 +384,14 @@
     
     NSData *data = [NSData dataWithBytes:inputData length:inNumberBytes];
     
-    if (self.delegate && [self.delegate respondsToSelector:@selector(audioStream_packetsWithAudioFileStream:data:inNumberBytes:inNumberPackets:inPacketDescrrptions:)]) {
-        [self.delegate audioStream_packetsWithAudioFileStream:self data:data inNumberBytes:inNumberBytes inNumberPackets:inNumberPackets inPacketDescrrptions:packetDescriptions];
+    if (self.delegate && [self.delegate respondsToSelector:@selector(audioStream_packetsWithAudioFileStream:data:inputData:inNumberBytes:inNumberPackets:inPacketDescrrptions:)]) {
+        [self.delegate audioStream_packetsWithAudioFileStream:self
+                                                         data:data
+                                                    inputData:inputData
+                                                inNumberBytes:inNumberBytes
+                                              inNumberPackets:inNumberPackets
+                                         inPacketDescrrptions:packetDescriptions];
     }
-    
-    return;
-    
-    /*
-    NSMutableArray *parseDataArray = [NSMutableArray array];
-    
-    for (int i = 0; i < inNumberPackets; i++) {
-        SInt64 packetOffset = packetDescriptions[i].mStartOffset;
-        NParseAudioData *parsedData = [NParseAudioData parsedAudioDataWithBytes:packets+packetOffset packetDescription:packetDescriptions[i]];
-//        NSLog(@"packetdata : %@",parsedData.data);
-        [parseDataArray addObject:parsedData];
-
-        if (_processedPacketsCount < BitRateEstimationMaxPackets) {
-            _processedPacketsSizeTotal += parsedData.packetDescription.mDataByteSize;
-            _processedPacketsCount += 1;
-            [self calculateBitRate];
-            [self calculateDuration];
-        }
-    }
-    
-    /// 解析音频数据帧
-    if (self.delegate && [self.delegate respondsToSelector:@selector(audioStream_packetsWithAudioFileStream:audioDatas:)]) {
-        [self.delegate audioStream_packetsWithAudioFileStream:self audioDatas:parseDataArray];
-    }
-    
-    
-    if (deletePackDesc) {
-        free(packetDescriptions);
-    }
-     */
 }
 
 #pragma mark - static callbacks

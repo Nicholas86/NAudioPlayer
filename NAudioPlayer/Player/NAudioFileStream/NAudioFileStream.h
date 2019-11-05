@@ -23,9 +23,9 @@ NS_ASSUME_NONNULL_BEGIN
 //- (void)audioStream_packetsWithAudioFileStream:(NAudioFileStream *)audioFileStream
 //                                          audioDatas:(NSArray *)audioDatas;
 
-
 - (void)audioStream_packetsWithAudioFileStream:(NAudioFileStream *)audioFileStream
                                           data:(NSData *)data
+                                     inputData:(const void *)inputData
                                  inNumberBytes:(UInt32)inNumberBytes
                                inNumberPackets:(UInt32)inNumberPackets
                           inPacketDescrrptions:(AudioStreamPacketDescription *)inPacketDescrrptions;
@@ -38,6 +38,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 该属性指明了音频数据的格式信息，返回的数据是一个AudioStreamBasicDescription结构
 @property (nonatomic, assign, readonly) AudioStreamBasicDescription audioStreamBasicDescription;
+
+@property (nonatomic, assign, readonly) AudioFileStreamID audioFileStreamID;
 
 @property (nonatomic, assign, readonly) NSTimeInterval duration; /// 时长
 

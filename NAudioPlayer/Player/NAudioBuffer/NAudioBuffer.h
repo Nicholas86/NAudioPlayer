@@ -13,6 +13,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @interface NAudioBuffer : NSObject
+
 + (instancetype)buffer;
 
 - (void)enqueueData:(NParseAudioData *)data;

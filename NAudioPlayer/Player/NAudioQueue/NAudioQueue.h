@@ -18,11 +18,13 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, assign, readonly) AudioQueueRef audioQueue; /// audio queue实例
 
+@property (nonatomic, assign, readonly) AudioFileStreamID audioFileStreamID;
+
 - (instancetype)initWithFilePath:(NSString *)filePath;
 
 /// 音频文件描述信息
-- (instancetype)initWithAudioDesc:(AudioStreamBasicDescription)audioDesc;
-
+- (instancetype)initWithAudioDesc:(AudioStreamBasicDescription)audioDesc
+                audioFileStreamID:(AudioFileStreamID)audioFileStreamID;
 /// 开始
 - (void)start;
 
@@ -41,7 +43,11 @@ NS_ASSUME_NONNULL_BEGIN
  *  @param packetDescriptions packet desccriptions
  *
  */
-- (void)playData:(NSData *)data inNumberPackets:(UInt32)inNumberPackets packetDescriptions:(AudioStreamPacketDescription *)packetDescriptions isEof:(BOOL)isEof;
+- (void)playData:(NSData *)data
+       inputData:(nonnull const void *)inputData
+ inNumberPackets:(UInt32)inNumberPackets
+packetDescriptions:(AudioStreamPacketDescription *)packetDescriptions
+           isEof:(BOOL)isEof;
 
 @end
 

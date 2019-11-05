@@ -26,9 +26,11 @@
     [super viewDidLoad];
     // Do any additional setup after loading the view.
     
-    NSString *path = [[NSBundle mainBundle] pathForResource:@"MP3Sample" ofType:@"mp3"];
+    NSString *path = [[NSBundle mainBundle] pathForResource:@"pf" ofType:@"mp3"];
     
-    _player = [[NAudioPlayer alloc] initWithFilePath:path];
+    if (!_player) {
+        _player = [[NAudioPlayer alloc] initWithFilePath:path];
+    }
 }
 
 - (IBAction)handlePlay:(UIButton *)sender
