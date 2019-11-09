@@ -67,12 +67,12 @@
 - (void)createAudioFileStream
 {
     /*
-         AudioFileStreamOpen的参数说明如下：
-         1. inClientData：用户指定的数据，用于传递给回调函数，这里我们指定(__bridge LocalAudioPlayer*)self
-         2. inPropertyListenerProc：当解析到一个音频信息时，将回调该方法
-         3. inPacketsProc：当解析到一个音频帧时，将回调该方法
-         4. inFileTypeHint：指明音频数据的格式，如果你不知道音频数据的格式，可以传0
-         5. outAudioFileStream：AudioFileStreamID实例，需保存供后续使用
+     AudioFileStreamOpen的参数说明如下：
+     1. inClientData：用户指定的数据，用于传递给回调函数，这里我们指定(__bridge NAudioFileStream*)self
+     2. inPropertyListenerProc：当解析到一个音频信息时，将回调该方法
+     3. inPacketsProc：当解析到一个音频帧时，将回调该方法
+     4. inFileTypeHint：指明音频数据的格式，如果你不知道音频数据的格式，可以传0
+     5. outAudioFileStream：AudioFileStreamID实例，需保存供后续使用
      */
     
     OSStatus status = AudioFileStreamOpen((__bridge void *)self, NAudioFileStreamPropertyListener, NAudioFileStreamPacketCallBack, 0, &_audioFileStreamID);
@@ -339,9 +339,9 @@
 }
 
 - (void)handleAudioFileStreamInputData:(const void *)inputData
-                       inNumberBytes:(UInt32)inNumberBytes
-                     inNumberPackets:(UInt32)inNumberPackets
-                   packetDescription:(AudioStreamPacketDescription *)packetDescriptions
+                         inNumberBytes:(UInt32)inNumberBytes
+                       inNumberPackets:(UInt32)inNumberPackets
+                     packetDescription:(AudioStreamPacketDescription *)packetDescriptions
 {
     if (_discontinuous) {
         _discontinuous = NO;

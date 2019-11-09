@@ -20,9 +20,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 @required
 ///// 解析音频数据帧
-//- (void)audioStream_packetsWithAudioFileStream:(NAudioFileStream *)audioFileStream
-//                                          audioDatas:(NSArray *)audioDatas;
-
 - (void)audioStream_packetsWithAudioFileStream:(NAudioFileStream *)audioFileStream
                                           data:(NSData *)data
                                      inputData:(const void *)inputData

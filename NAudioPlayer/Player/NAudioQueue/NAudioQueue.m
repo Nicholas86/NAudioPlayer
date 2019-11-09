@@ -315,8 +315,8 @@ packetDescriptions:(AudioStreamPacketDescription *)packetDescriptions
         SInt64 packetSize = packetDesc.mDataByteSize;
         size_t bufSpaceRemaining;
         
-        NSLog(@"processedPacketsCount: %llu", processedPacketsCount);
-        NSLog(@"packetSize: %llu, packetBufferSize: %d", packetSize, packetBufferSize);
+//        NSLog(@"processedPacketsCount: %llu", processedPacketsCount);
+//        NSLog(@"packetSize: %llu, packetBufferSize: %d", packetSize, packetBufferSize);
 
         if (processedPacketsCount < BitRateEstimationMaxPackets) {
             processedPacketsSizeTotal += packetSize;
@@ -333,7 +333,7 @@ packetDescriptions:(AudioStreamPacketDescription *)packetDescriptions
         }
         
         if (bufSpaceRemaining < packetSize) {
-            NSLog(@"bufSpaceRemaining < packetSize。bufSpaceRemaining:%zu, packetSize:%lld", bufSpaceRemaining, packetSize);
+//            NSLog(@"bufSpaceRemaining < packetSize。bufSpaceRemaining:%zu, packetSize:%lld", bufSpaceRemaining, packetSize);
 
             [self enqueueBuffer];
         }
@@ -383,11 +383,12 @@ packetDescriptions:(AudioStreamPacketDescription *)packetDescriptions
             status = AudioQueueEnqueueBuffer(_audioQueue, fillBuf, 0, NULL);
         }
         
-        NSLog(@"buffersUsed: %ld", (long)buffersUsed);
+//        NSLog(@"buffersUsed: %ld", (long)buffersUsed);
         
         if (buffersUsed == kNumberOfBuffers - 1){
-             status = AudioQueueStart(_audioQueue, NULL);
-            NSLog(@"播放开始, status: %d", status);
+//             status = AudioQueueStart(_audioQueue, NULL);
+//            NSLog(@"播放开始, status: %d", status);
+            [self start];
         }
         // go to next buffer
         if (++fillBufferIndex >= kNumberOfBuffers) fillBufferIndex = 0;
@@ -401,53 +402,6 @@ packetDescriptions:(AudioStreamPacketDescription *)packetDescriptions
         pthread_cond_wait(&queueBufferReadyCondition, &queueBuffersMutex);
     }
     pthread_mutex_unlock(&queueBuffersMutex);
-}
-
-- (void)p_putBufferToQueue
-{
-    inUsed[currBufferIndex] = YES;
-    
-    AudioQueueBufferRef outBufferRef = audioQueueBuffer[currBufferIndex];
-    
-    OSStatus error;
-
-    if (currBufferPacketCount > 0) {
-        NSLog(@"currBufferPacketCount > 0 ");
-        error = AudioQueueEnqueueBuffer(_audioQueue, outBufferRef, currBufferPacketCount, audioStreamPacketDesc);
-    }else{
-        NSLog(@"currBufferPacketCount <= 0 ");
-
-        error = AudioQueueEnqueueBuffer(_audioQueue, outBufferRef, 0, NULL);
-    }
-    
-    if (error != noErr) {
-        /// [_audioProperty error:LLYAudioError_AQB_EnqueueFail];
-        return;
-    }
-    
-//    if (_audioProperty.status != LLYAudioStatus_Playing) {
-//        _audioProperty.status = LLYAudioStatus_Playing;
-//    }
-    
-    if (!_started) {
-        [self start];
-    }
-    
-    /// [self start];
-    
-    currBufferIndex = ++currBufferIndex % kNumberOfBuffers;
-    
-    NSLog(@"currBufferIndex: %u", (unsigned int)currBufferIndex);
-    
-    currBufferPacketCount = 0;
-    
-    /// 当前buffer已填充的数据量恢复为0
-    currBufferFillOffset = 0;
-    
-    /// while (inUsed[currBufferIndex]);
-    while (inUsed[currBufferIndex]) {
-        /// NSLog(@"一直循环");
-    }
 }
 
 #pragma mark private method

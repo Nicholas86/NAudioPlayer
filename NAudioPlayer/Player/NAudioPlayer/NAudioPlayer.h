@@ -8,9 +8,22 @@
 
 #import <Foundation/Foundation.h>
 
+typedef NS_ENUM(NSUInteger, NAudioPlayerStatus)
+{
+    NAudioPlayerStatusStopped = 0,
+    NAudioPlayerStatusPlaying = 1,
+    NAudioPlayerStatusWaiting = 2,
+    NAudioPlayerStatusPaused = 3,
+    NAudioPlayerStatusFlushing = 4,
+};
+
 NS_ASSUME_NONNULL_BEGIN
 
 @interface NAudioPlayer : NSObject
+
+@property (nonatomic, readonly) NAudioPlayerStatus status;
+
+@property (nonatomic, readonly) NSTimeInterval duration; /// 总时长
 
 - (instancetype)initWithFilePath:(NSString *)filePath;
 
