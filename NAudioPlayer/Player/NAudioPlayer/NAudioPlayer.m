@@ -21,6 +21,10 @@
     
     BOOL _isFileStreamExisted;
     unsigned long long  _fileLength;        // Length of the file in bytes
+    
+//    BOOL _started;
+    BOOL _pauseRequired;
+    NSTimeInterval _timingOffset;
 }
 
 @property (nonatomic, readwrite) NAudioPlayerStatus status;
@@ -41,10 +45,12 @@
     if (self) {
         _status = NAudioPlayerStatusStopped;
         _isFileStreamExisted = NO;
+//        _started = NO;
+        _pauseRequired = NO;
         _filePath = filePath;
         _audioFileHandle = [NSFileHandle fileHandleForReadingAtPath:filePath];
         _fileLength = [[[NSFileManager defaultManager] attributesOfItemAtPath:filePath error:nil] fileSize];
-        NSLog(@"文件总长度, _fileLength: %llu", _fileLength);
+        NSLog(@"文件总长度, NAudioPlayer, _fileLength: %llu", _fileLength);
     }return self;
 }
 
@@ -57,9 +63,26 @@
 
 - (void)play
 {
-    if (!_thread) {
+//    if (!_started) {
+//        _started = YES;
+//        _thread = [[NSThread alloc] initWithTarget:self selector:@selector(threadMain) object:nil];
+//        [_thread start];
+//    }else{
+//        if (self.status == NAudioPlayerStatusPaused || _pauseRequired) {
+//            _pauseRequired = NO;
+//            [_audioQueue start];
+//        }
+//    }
+    if (self.status == NAudioPlayerStatusStopped) {
+//        _started = YES;
+        /// 更新播放状态: 等待播放
+        [self setStatusInternal:(NAudioPlayerStatusWaiting)];
         _thread = [[NSThread alloc] initWithTarget:self selector:@selector(threadMain) object:nil];
         [_thread start];
+    }else if (self.status == NAudioPlayerStatusPaused){
+        /// 更新播放状态: 等待播放
+        [self setStatusInternal:(NAudioPlayerStatusWaiting)];
+        [_audioQueue start];
     }
 }
 
@@ -75,6 +98,7 @@
         /// 更新播放状态: NAudioPlayerStatusPaused
         [self setStatusInternal:NAudioPlayerStatusPaused];
         [self.audioQueue pause];
+        // _pauseRequired = YES;
     }
 }
 
@@ -115,31 +139,84 @@
  */
 - (void)threadMain
 {
+//    /// 更新播放状态: 等待播放
+//    [self setStatusInternal:(NAudioPlayerStatusWaiting)];
+//    while ((self.status != NAudioPlayerStatusStopped) && _started) {
+//        NSLog(@"do。。。");
+//        /// 创建文件解析对象
+//        if (!_audioFileStream) {
+//           [self createAudioFileStream];
+//        }
+//
+//        /// play
+//        if (_started) {
+//            [self handleTask];
+//        }
+//
+//        /// pause
+//
+//    }
+    
+    do {
+        NSLog(@"do。。。");
+        /// 创建文件解析对象
+        if (!_audioFileStream) {
+           [self createAudioFileStream];
+        }
+
+//        /// pause
+//        if (_pauseRequired) {
+//            [self setStatusInternal:NAudioPlayerStatusPaused];
+//            [self.audioQueue pause];
+//            _pauseRequired = NO;
+//        }
+    
+        /// NSLog(@"_audioQueue.buffersUsed: %ld", (long)_audioQueue.buffersUsed);
+        /// pause
+        if (self.status == NAudioPlayerStatusPaused) {
+            NSLog(@"for 循环 里 暂停播放");
+            [self setStatusInternal:NAudioPlayerStatusStopped];
+            [self.audioQueue pause];
+//            _pauseRequired = NO;
+        }
+        
+        /// play
+        [self handleTask];
+//        if (_started) {
+//            [self handleTask];
+//        }
+    
+//        if (_started) {
+//            [self handleTask];
+//        }
+
+    } while (self.status != NAudioPlayerStatusStopped);
+
+    return;
+    
     /// 创建文件解析对象
     if (!_audioFileStream) {
         [self createAudioFileStream];
     }
     
     /// 子线程开启定时器
-    if (!_timer) {
-        if (@available(iOS 10.0, *)) { /// 时间间隔设置小
-            _timer = [NSTimer scheduledTimerWithTimeInterval:0.1 repeats:YES block:^(NSTimer * _Nonnull timer) {
-                [self handleTask];
-            }];
-        } else {
-            // Fallback on earlier versions
-        }
-        [[NSRunLoop currentRunLoop] run];
+    if (@available(iOS 10.0, *)) { /// 时间间隔设置小
+        _timer = [NSTimer scheduledTimerWithTimeInterval:0.1 repeats:YES block:^(NSTimer * _Nonnull timer) {
+            [self handleTask];
+        }];
+    } else {
+        // Fallback on earlier versions
     }
+    [[NSRunLoop currentRunLoop] run];
 }
 
 /// 定时器
 - (void)handleTask
 {
     NSLog(@"定时器循环");
-    /// 更新播放状态: 等待播放
-    [self setStatusInternal:(NAudioPlayerStatusWaiting)];
-    
+//    /// 更新播放状态: 等待播放
+//    [self setStatusInternal:(NAudioPlayerStatusWaiting)];
+
     if (self.status == NAudioPlayerStatusWaiting || self.status == NAudioPlayerStatusPlaying) {
         /// 外部读的数据比内部多
        NSData *data = [self.audioFileHandle readDataOfLength:kAudioFileBufferSize];
@@ -174,9 +251,8 @@
     if (self.status == NAudioPlayerStatusWaiting || self.status == NAudioPlayerStatusPlaying) {
        /// 更新播放状态: NAudioPlayerStatusPlaying
         [self setStatusInternal:(NAudioPlayerStatusPlaying)];
-       [_audioQueue playData:data inputData:inputData inNumberPackets:inNumberPackets packetDescriptions:inPacketDescrrptions isEof:YES];
+        [_audioQueue playData:data inputData:inputData inNumberPackets:inNumberPackets packetDescriptions:inPacketDescrrptions isEof:YES];
     }
-    
 }
 
 #pragma mark private method
@@ -199,6 +275,23 @@
         return 0;
     }
     return [_audioFileStream duration];
+}
+
+- (UInt32)bitRate
+{
+    if (!_audioFileStream) {
+        return 0;
+    }
+    return [_audioFileStream bitRate];
+}
+
+- (NSTimeInterval)progress
+{
+//    if (_seekRequired)
+//    {
+//        return _seekTime;
+//    }
+    return _timingOffset + _audioQueue.playedTime;
 }
 
 @end

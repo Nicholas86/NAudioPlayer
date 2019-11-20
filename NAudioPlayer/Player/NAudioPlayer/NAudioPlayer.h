@@ -25,6 +25,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, readonly) NSTimeInterval duration; /// 总时长
 
+@property (nonatomic, assign, readonly) UInt32 bitRate; /// 速率
+
+@property (nonatomic,assign) NSTimeInterval progress; /// 播放进度
+
 - (instancetype)initWithFilePath:(NSString *)filePath;
 
 - (void)play;

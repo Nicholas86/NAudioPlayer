@@ -13,12 +13,16 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface NAudioQueue : NSObject
 
+@property (nonatomic, assign, readonly) NSInteger buffersUsed;
+
 /// 该属性指明了音频数据的格式信息，返回的数据是一个AudioStreamBasicDescription结构
 @property (nonatomic, assign, readonly) AudioStreamBasicDescription audioStreamBasicDescription;
 
 @property (nonatomic, assign, readonly) AudioQueueRef audioQueue; /// audio queue实例
 
 @property (nonatomic, assign, readonly) AudioFileStreamID audioFileStreamID;
+
+@property (nonatomic,assign, readonly) NSTimeInterval playedTime;
 
 - (instancetype)initWithFilePath:(NSString *)filePath;
 

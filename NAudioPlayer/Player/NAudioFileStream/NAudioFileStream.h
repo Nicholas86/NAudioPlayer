@@ -40,6 +40,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, assign, readonly) NSTimeInterval duration; /// 时长
 
+@property (nonatomic, assign, readonly) UInt32 bitRate; /// 速率
+
 - (instancetype)initWithFilePath:(NSString *)path fileLength:(NSInteger )fileLength;
 
 - (void)parseData:(NSData *)data;

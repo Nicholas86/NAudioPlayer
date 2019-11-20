@@ -19,7 +19,10 @@
 
 @property (weak, nonatomic) IBOutlet UISlider *progressSlider;
 
+@property (weak, nonatomic) IBOutlet UILabel *positionLabel;
+
 @property (nonatomic, strong) NAudioPlayer *player;
+
 @end
 
 @implementation ViewController
@@ -27,9 +30,8 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     // Do any additional setup after loading the view.
-    
+    _progressSlider.value = 0.0;
     NSString *path = [[NSBundle mainBundle] pathForResource:@"pf" ofType:@"mp3"];
-    
     if (!_player) {
         _player = [[NAudioPlayer alloc] initWithFilePath:path];
         [_player addObserver:self forKeyPath:@"status" options:NSKeyValueObservingOptionNew context:nil];
@@ -38,21 +40,23 @@
 
 - (IBAction)handlePlay:(UIButton *)sender
 {
-    NSLog(@"开始、暂停");
+    
     if (_player.status == NAudioPlayerStatusPlaying || _player.status == NAudioPlayerStatusWaiting) {
+        NSLog(@"暂停");
         [_player pause];
         [_playBtn setTitle:@"Play" forState:(UIControlStateNormal)];
     }else{
+        NSLog(@"开始");
         [_player play];
         [_playBtn setTitle:@"Pause" forState:(UIControlStateNormal)];
         NSLog(@"duration: %.2f", _player.duration);
-//        progressUpdateTimer =
-//               [NSTimer
-//                   scheduledTimerWithTimeInterval:0.1
-//                   target:self
-//                   selector:@selector(updateProgress:)
-//                   userInfo:nil
-//                   repeats:YES];
+        progressUpdateTimer =
+               [NSTimer
+                   scheduledTimerWithTimeInterval:0.1
+                   target:self
+                   selector:@selector(updateProgress:)
+                   userInfo:nil
+                   repeats:YES];
     }
 }
 
@@ -71,12 +75,27 @@
 
 - (void)updateProgress:(NSTimer *)updatedTimer
 {
-//    NSLog(@"更新进度, streamer.bitRate: %.2f", (unsigned int)streamer.bitRate);
     
-//    if (streamer.bitRate != 0.0)
+    if ((_player.bitRate != 0.0) && (_player.duration != 0.0)) {
+        double progress = _player.progress;
+        double duration = _player.duration;
+        NSLog(@"progress:%.2f, duration: %.2f", progress, duration);
+        if (duration > 0) {
+            [_progressSlider setEnabled:YES];
+            [_progressSlider setValue:(progress / duration) animated:YES];
+            [_positionLabel setText:[NSString stringWithFormat:@"Time Played: %.1f/%.1f seconds", progress, duration]];
+        }else{
+            [_progressSlider setEnabled:NO];
+        }
+    }else{
+        
+       // positionLabel.text = @"Time Played:";
+//        NSLog(@"duration: %.2f", duration);
+    }
+//    if (_player.bitRate != 0.0)
 //    {
-//        double progress = streamer.progress;
-//        double duration = streamer.duration;
+//        // double progress = _player.progress;
+//        double duration = _player.duration;
 //
 //        if (duration > 0)
 //        {

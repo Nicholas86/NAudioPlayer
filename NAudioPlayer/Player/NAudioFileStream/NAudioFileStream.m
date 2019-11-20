@@ -46,7 +46,7 @@
 
 //@property (nonatomic, assign) unsigned long long fileSize;
 @property (nonatomic, assign, readwrite) NSTimeInterval duration; /// 时长
-@property (nonatomic, assign) UInt32 bitRate; /// 速率
+@property (nonatomic, assign, readwrite) UInt32 bitRate; /// 速率
 
 @property (nonatomic, assign) UInt32 maxPacketSize;
 
@@ -59,6 +59,7 @@
     self = [super init];
     if (self) {
         _path = path;
+        NSLog(@"文件总长度, NAudioFileStream, _fileLength: %ld", (long)fileLength);
         _fileLength = fileLength;
         [self createAudioFileStream];
     }return self;
@@ -182,12 +183,13 @@
 }
 
 /// 音频文件读取速率
-- (void)calculateBitRate
+- (UInt32)calculateBitRate
 {
     if (_packetDuration && _processedPacketsCount > BitRateEstimationMinPackets && _processedPacketsCount <= BitRateEstimationMaxPackets){
         double averagePacketByteSize = _processedPacketsSizeTotal / _processedPacketsCount;
-        _bitRate = 8.0 * averagePacketByteSize / _packetDuration;
+        return _bitRate = 8.0 * averagePacketByteSize / _packetDuration;
     }
+    return 0.0;
 }
 
 /// 音频文件总时长
@@ -206,6 +208,16 @@
     }
     
     NSLog(@"当前已读取了多少个packet, %.2f", _packetDuration);
+}
+
+- (UInt32)bitRate
+{
+    return [self calculateBitRate];
+}
+
+ - (NSTimeInterval)duration
+{
+    return ((_fileLength - _dataOffset) * 8.0) / _bitRate;
 }
 
 #pragma mark - private method
@@ -259,7 +271,8 @@
         NSLog(@">>>>>>> kAudioFileStreamProperty_DataOffset <<<<<<<");
 
         _dataOffset = offset; 
-        
+        /// _audioDataByteCount = _fileLength - _dataOffset;
+        [self calculateDuration];
     }else if (propertyID == kAudioFileStreamProperty_AudioDataByteCount){
         UInt32 audioDataByteCount;
         UInt32 byteCountSize = sizeof(audioDataByteCount);
@@ -381,6 +394,17 @@
     
     _inNumberBytes += inNumberBytes; /// 当前已读取的packet的总文件大小 （这两个变量用来计算平均码率）
     _inNumberPackets += inNumberPackets; /// 当前已读取了多少个 packet
+    
+    for (int i = 0; i < inNumberPackets; ++i)
+    {
+        if (_processedPacketsCount < BitRateEstimationMaxPackets)
+        {
+            _processedPacketsSizeTotal += packetDescriptions[i].mDataByteSize;
+            _processedPacketsCount += 1;
+            [self calculateBitRate];
+            [self calculateDuration];
+        }
+    }
     
     NSData *data = [NSData dataWithBytes:inputData length:inNumberBytes];
     

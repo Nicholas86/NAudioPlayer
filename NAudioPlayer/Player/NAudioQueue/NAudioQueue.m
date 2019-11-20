@@ -38,7 +38,7 @@
     UInt32 packetBufferSize;
     size_t bytesFilled;                // how many bytes have been filled
     bool inuse[kNumberOfBuffers];            // flags to indicate that a buffer is still in use
-    NSInteger buffersUsed;
+    /// NSInteger buffersUsed;
     unsigned int fillBufferIndex;    // the index of the audioQueueBuffer that is being filled
     size_t packetsFilled;            // how many packets have been filled
     UInt64 processedPacketsCount;        // number of packets accumulated for bitrate estimation
@@ -48,7 +48,10 @@
     pthread_mutex_t queueBuffersMutex;            // a mutex to protect the inuse flags
     pthread_cond_t queueBufferReadyCondition;    // a condition varable for handling the inuse flags
     bool _started;
+    
 }
+
+@property (nonatomic, assign, readwrite) NSInteger buffersUsed;
 
 /// 该属性指明了音频数据的格式信息，返回的数据是一个AudioStreamBasicDescription结构
 @property (nonatomic, assign, readwrite) AudioStreamBasicDescription audioStreamBasicDescription;
@@ -56,6 +59,8 @@
 @property (nonatomic, assign, readwrite) AudioFileStreamID audioFileStreamID;
 
 @property (nonatomic, assign, readwrite) AudioQueueRef audioQueue; /// audio queue实例
+
+@property (nonatomic, assign, readwrite) NSTimeInterval playedTime;
 
 @end
 
@@ -87,8 +92,8 @@
         currBufferIndex = 0;
         currBufferFillOffset = 0;
         currBufferPacketCount = 0;
-        self.audioStreamBasicDescription = audioDesc;
-        self.audioFileStreamID = audioFileStreamID;
+        _audioStreamBasicDescription = audioDesc;
+        _audioFileStreamID = audioFileStreamID;
         [self createAudioSession];
         [self createPthread];
         [self createAudioQueue];
@@ -273,6 +278,7 @@
 //        [self.audioProperty error:LLYAudioError_AQ_PauseFail];
         return;
     }
+    NSLog(@"pause, status: %d", status);
 }
 
 /// 停止
@@ -372,7 +378,7 @@ packetDescriptions:(AudioStreamPacketDescription *)packetDescriptions
 {
     @synchronized(self){
         inuse[fillBufferIndex] = true;        // set in use flag
-        buffersUsed++;
+        _buffersUsed++;
         OSStatus status;
         // enqueue buffer
         AudioQueueBufferRef fillBuf = audioQueueBuffer[fillBufferIndex];
@@ -385,7 +391,7 @@ packetDescriptions:(AudioStreamPacketDescription *)packetDescriptions
         
 //        NSLog(@"buffersUsed: %ld", (long)buffersUsed);
         
-        if (buffersUsed == kNumberOfBuffers - 1){
+        if (_buffersUsed == kNumberOfBuffers - 1){
 //             status = AudioQueueStart(_audioQueue, NULL);
 //            NSLog(@"播放开始, status: %d", status);
             [self start];
@@ -440,7 +446,7 @@ packetDescriptions:(AudioStreamPacketDescription *)packetDescriptions
         // signal waiting thread that the buffer is free.
         pthread_mutex_lock(&queueBuffersMutex);
         inuse[bufIndex] = false;
-        buffersUsed--;
+        _buffersUsed--;
 
     //
     //  Enable this logging to measure how many buffers are queued at any time.
@@ -566,4 +572,24 @@ static void ASAudioQueueIsRunningCallback(void *inUserData, AudioQueueRef inAQ, 
         }
     }
 }
+
+#pragma mark - property
+- (NSTimeInterval)playedTime
+{
+    if (_audioStreamBasicDescription.mSampleRate == 0)
+    {
+        return 0;
+    }
+    
+    AudioTimeStamp time;
+    OSStatus status = AudioQueueGetCurrentTime(_audioQueue, NULL, &time, NULL);
+    if (status == noErr)
+    {
+        _playedTime = time.mSampleTime / _audioStreamBasicDescription.mSampleRate;
+    }
+    
+    return _playedTime;
+}
+
+
 @end
