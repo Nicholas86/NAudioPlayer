@@ -188,7 +188,7 @@
         }
         
         /// play
-        [self handleTask];
+        [self _play];
 //        if (_started) {
 //            [self handleTask];
 //        }
@@ -196,29 +196,10 @@
 //        if (_started) {
 //            [self handleTask];
 //        }
-
     } while (self.status != NAudioPlayerStatusStopped);
-
-    return;
-    
-    /// 创建文件解析对象
-    if (!_audioFileStream) {
-        [self createAudioFileStream];
-    }
-    
-    /// 子线程开启定时器
-    if (@available(iOS 10.0, *)) { /// 时间间隔设置小
-        _timer = [NSTimer scheduledTimerWithTimeInterval:0.1 repeats:YES block:^(NSTimer * _Nonnull timer) {
-            [self handleTask];
-        }];
-    } else {
-        // Fallback on earlier versions
-    }
-    [[NSRunLoop currentRunLoop] run];
 }
 
-/// 定时器
-- (void)handleTask
+- (void)_play
 {
     /// NSLog(@"定时器循环");
 //    /// 更新播放状态: 等待播放
@@ -249,7 +230,7 @@
                                  inNumberBytes:(UInt32)inNumberBytes
                                inNumberPackets:(UInt32)inNumberPackets inPacketDescrrptions:(nonnull AudioStreamPacketDescription *)inPacketDescrrptions
 {
-    /// NSLog(@">>>>>>>>>>>> 解析音频数据帧(%ld)---- 开始播放 <<<<<<<<<<<<<<", [data length]);
+    NSLog(@">>>>>>>>>>>> 解析音频数据帧(%ld)---- 开始播放 <<<<<<<<<<<<<<", [data length]);
     if (!_audioQueue) {
         NSLog(@"_audioQueue is null");
         return;

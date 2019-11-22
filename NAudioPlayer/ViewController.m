@@ -40,7 +40,6 @@
 
 - (IBAction)handlePlay:(UIButton *)sender
 {
-    
     if (_player.status == NAudioPlayerStatusPlaying || _player.status == NAudioPlayerStatusWaiting) {
         NSLog(@"暂停");
         [_player pause];

@@ -239,7 +239,7 @@
         NSLog(@"AudioQueueStart 失败!!!");
     }
     
-    /// NSLog(@"AudioQueueStart 成功!!!");
+    NSLog(@"AudioQueueStart 成功!!!");
     
     /// 标记start始成功
     _started = YES;
@@ -410,21 +410,10 @@ packetDescriptions:(AudioStreamPacketDescription *)packetDescriptions
 
 - (void)p_audioQueueOutput:(AudioQueueRef)inAQ inBuffer:(AudioQueueBufferRef)inBuffer
 {
-//    for (int i = 0; i < kNumberOfBuffers; i++) {
-//
-//        if (inBuffer == audioQueueBuffer[i]) {
-//            [_lock lock];
-//            /// // 将这个 buffer 设为未使用
-//            inUsed[i] = NO;
-//            NSLog(@"当前buffer_%d的数据已经播放完了 还给程序继续装数据去吧！！！！！！",i);
-//            [_lock unlock];
-//        }
-//    }
-    
         unsigned int bufIndex = -1;
         for (unsigned int i = 0; i < kNumberOfBuffers; ++i){
             if (inBuffer == audioQueueBuffer[i]){
-                /// NSLog(@"当前buffer_%d的数据已经播放完了 还给程序继续装数据去吧！！！！！！",i);
+                NSLog(@"当前buffer_%d的数据已经播放完了 还给程序继续装数据去吧！！！！！！", i);
                 bufIndex = i;
                 break;
             }
@@ -432,7 +421,7 @@ packetDescriptions:(AudioStreamPacketDescription *)packetDescriptions
         
         if (bufIndex == -1)
         {
-//            [self failWithErrorCode:AS_AUDIO_QUEUE_BUFFER_MISMATCH];
+            // [self failWithErrorCode:AS_AUDIO_QUEUE_BUFFER_MISMATCH];
             pthread_mutex_lock(&queueBuffersMutex);
             pthread_cond_signal(&queueBufferReadyCondition);
             pthread_mutex_unlock(&queueBuffersMutex);
