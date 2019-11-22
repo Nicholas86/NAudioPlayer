@@ -20,7 +20,7 @@
     NSTimer *_timer;
     
     BOOL _isFileStreamExisted;
-    unsigned long long  _fileLength;        // Length of the file in bytes
+    unsigned long long  _fileSize;        // Length of the file in bytes
     
 //    BOOL _started;
     BOOL _pauseRequired;
@@ -53,15 +53,15 @@
         _seekWasRequested = NO;
         _filePath = filePath;
         _audioFileHandle = [NSFileHandle fileHandleForReadingAtPath:filePath];
-        _fileLength = [[[NSFileManager defaultManager] attributesOfItemAtPath:filePath error:nil] fileSize];
-        NSLog(@"文件总长度, NAudioPlayer, _fileLength: %llu", _fileLength);
+        _fileSize = [[[NSFileManager defaultManager] attributesOfItemAtPath:filePath error:nil] fileSize];
+        NSLog(@"文件总长度, NAudioPlayer, _fileSize: %llu", _fileSize);
     }return self;
 }
 
 /// 解析文件
 - (void)createAudioFileStream
 {
-    _audioFileStream = [[NAudioFileStream alloc] initWithFilePath:_filePath fileLength:_fileLength];
+    _audioFileStream = [[NAudioFileStream alloc] initWithFilePath:_filePath fileSize:_fileSize];
     _audioFileStream.delegate = self;
 }
 
@@ -140,6 +140,7 @@
 {
     @synchronized (self) {
         _seekWasRequested = YES;
+        _seekTime = newTime;
     }
 }
 
@@ -150,26 +151,8 @@
  */
 - (void)threadMain
 {
-//    /// 更新播放状态: 等待播放
-//    [self setStatusInternal:(NAudioPlayerStatusWaiting)];
-//    while ((self.status != NAudioPlayerStatusStopped) && _started) {
-//        NSLog(@"do。。。");
-//        /// 创建文件解析对象
-//        if (!_audioFileStream) {
-//           [self createAudioFileStream];
-//        }
-//
-//        /// play
-//        if (_started) {
-//            [self handleTask];
-//        }
-//
-//        /// pause
-//
-//    }
-    
     do {
-        NSLog(@"do。。。");
+        /// NSLog(@"do。。。");
         /// 创建文件解析对象
         if (!_audioFileStream) {
            [self createAudioFileStream];
@@ -186,8 +169,14 @@
         
         /// seek
         if (_seekWasRequested) {
-            
+            NSLog(@"拖动滑块seek了");
+            [self setStatusInternal:(NAudioPlayerStatusStopped)];
+            _timingOffset = _seekTime - _audioQueue.playedTime;
+            unsigned long long _seekOffset = [_audioFileStream seekToTime:_seekTime];
+            [_audioFileHandle seekToFileOffset:_seekOffset];
+            [_audioQueue reset];
             _seekWasRequested = NO;
+            [self setStatusInternal:(NAudioPlayerStatusWaiting)];
         }
         
         /// pause
@@ -231,7 +220,7 @@
 /// 定时器
 - (void)handleTask
 {
-    NSLog(@"定时器循环");
+    /// NSLog(@"定时器循环");
 //    /// 更新播放状态: 等待播放
 //    [self setStatusInternal:(NAudioPlayerStatusWaiting)];
 
@@ -260,7 +249,7 @@
                                  inNumberBytes:(UInt32)inNumberBytes
                                inNumberPackets:(UInt32)inNumberPackets inPacketDescrrptions:(nonnull AudioStreamPacketDescription *)inPacketDescrrptions
 {
-    NSLog(@">>>>>>>>>>>> 解析音频数据帧(%ld)---- 开始播放 <<<<<<<<<<<<<<", [data length]);
+    /// NSLog(@">>>>>>>>>>>> 解析音频数据帧(%ld)---- 开始播放 <<<<<<<<<<<<<<", [data length]);
     if (!_audioQueue) {
         NSLog(@"_audioQueue is null");
         return;
@@ -305,10 +294,10 @@
 
 - (NSTimeInterval)progress
 {
-//    if (_seekRequired)
-//    {
-//        return _seekTime;
-//    }
+    if (_seekWasRequested)
+    {
+        return _seekTime;
+    }
     return _timingOffset + _audioQueue.playedTime;
 }
 

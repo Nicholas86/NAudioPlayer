@@ -21,13 +21,13 @@
     SInt64 _dataOffset;
     NSTimeInterval _packetDuration; // 当前已读取了多少个packet
     UInt64 _audioDataByteCount;
-    NSInteger _fileLength;        // Length of the file in bytes
+    NSInteger _fileSize;        // Length of the file in bytes
 
     UInt64 _processedPacketsCount;
     UInt64 _processedPacketsSizeTotal;
     
     UInt64 _seekByteOffset;    // Seek offset within the file in bytes
-    NSTimeInterval *_seekTime;
+//    NSTimeInterval _seekTime;
     
     NSInteger _inNumberBytes; /// 当前已读取的packet的总文件大小 （这两个变量用来计算平均码率）
     NSInteger _inNumberPackets; /// 当前已读取了多少个 packet
@@ -54,13 +54,13 @@
 
 @implementation NAudioFileStream
 
-- (instancetype)initWithFilePath:(NSString *)path fileLength:(NSInteger )fileLength
+- (instancetype)initWithFilePath:(NSString *)path fileSize:(NSInteger )fileSize
 {
     self = [super init];
     if (self) {
         _path = path;
-        NSLog(@"文件总长度, NAudioFileStream, _fileLength: %ld", (long)fileLength);
-        _fileLength = fileLength;
+        NSLog(@"文件总长度, NAudioFileStream, _fileSize: %ld", (long)_fileSize);
+        _fileSize = fileSize;
         [self createAudioFileStream];
     }return self;
 }
@@ -131,41 +131,40 @@
 }
 
 /// 拖动进度条，需要到几分几秒，而我们实际上操作的是文件，即寻址到第几个字节开始播放音频数据
-- (void)seekToTime:(NSTimeInterval *)newSeekTime
+- (unsigned long long)seekToTime:(double)newTime
 {
-    if (_bitRate == 0.0 || _fileLength <= 0){
+    if (_bitRate == 0.0 || _fileSize <= 0){
         NSLog(@"_bitRate, _fileLength is 0");
-        return;
+        return 0.0;
     }
     
     /// 近似seekByteOffset = 数据偏移 + seekToTime对应的近似字节数
-    _seekByteOffset = _dataOffset + (*newSeekTime / _duration) * (_fileLength - _dataOffset);
+    _seekByteOffset = _dataOffset + (newTime / _duration) * (_fileSize - _dataOffset);
     
-//    if (_seekByteOffset > _fileLength - 2 * packetBufferSize){
-//        _seekByteOffset = fileLength - 2 * packetBufferSize;
+//    if (_seekByteOffset > _fileSize - 2 * packetBufferSize){
+//        _seekByteOffset = _fileSize - 2 * packetBufferSize;
 //    }
-    
-    _seekTime = newSeekTime;
-    
+        
     if (_packetDuration > 0) {
         /*
          1. 首先需要计算每个packet对应的时长_packetDuration
          2. 再然后计算_packetDuration位置seekToPacket
          */
-        SInt64 seekToPacket = floor(*newSeekTime / _packetDuration);
+        SInt64 seekToPacket = floor(newTime / _packetDuration);
         
         UInt32 ioFlags = 0;
         SInt64 outDataByteOffset;
         OSStatus status = AudioFileStreamSeek(_audioFileStreamID, seekToPacket, &outDataByteOffset, &ioFlags);
+        NSLog(@"seek status : %d, _seekByteOffset: %llu", status, _seekByteOffset);
         if ((status == noErr) && !(ioFlags & kAudioFileStreamSeekFlag_OffsetIsEstimated)){
-            *_seekTime -= ((_seekByteOffset - _dataOffset) - outDataByteOffset) * 8.0 / _bitRate;
             _seekByteOffset = outDataByteOffset + _dataOffset;
         }
     }
     
-    NSLog(@"_seekByteOffset: %llu", _seekByteOffset);
+    NSLog(@"_seekByteOffset: %llu, _fileSize: %ld", _seekByteOffset, (long)_fileSize);
     
     /// 继续播放的操作, audioQueue处理
+    return _seekByteOffset;
 }
 
 #pragma mark - open & close
@@ -195,8 +194,8 @@
 /// 音频文件总时长
 - (void)calculateDuration
 {
-    if (_fileLength > 0 && _bitRate > 0){
-        _duration = ((_fileLength - _dataOffset) * 8.0) / _bitRate;
+    if (_fileSize > 0 && _bitRate > 0){
+        _duration = ((_fileSize - _dataOffset) * 8.0) / _bitRate;
     }
 }
 
@@ -217,7 +216,7 @@
 
  - (NSTimeInterval)duration
 {
-    return ((_fileLength - _dataOffset) * 8.0) / _bitRate;
+    return ((_fileSize - _dataOffset) * 8.0) / _bitRate;
 }
 
 #pragma mark - private method

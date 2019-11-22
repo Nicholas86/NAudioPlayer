@@ -80,7 +80,7 @@
     if ((_player.bitRate != 0.0) && (_player.duration != 0.0)) {
         double progress = _player.progress;
         double duration = _player.duration;
-        NSLog(@"progress:%.2f, duration: %.2f", progress, duration);
+        /// NSLog(@"progress:%.2f, duration: %.2f", progress, duration);
         if (duration > 0) {
             [_progressSlider setEnabled:YES];
             [_progressSlider setValue:(progress / duration) animated:YES];

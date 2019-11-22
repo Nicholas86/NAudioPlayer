@@ -166,16 +166,6 @@
 
     NSLog(@"packetBufferSize: %d", packetBufferSize);
     
-    // allocate audio queue buffers
-//    for (unsigned int i = 0; i < kNumberOfBuffers; ++i){
-//        status = AudioQueueAllocateBuffer(_audioQueue, packetBufferSize, &audioQueueBuffer[i]);
-//        if (status){
-//            /// [self failWithErrorCode:AS_AUDIO_QUEUE_BUFFER_ALLOCATION_FAILED];
-//            NSLog(@"buffer alloc fail");
-//            return;
-//        }
-//    }
-    
     [self createBuffer];
     
     NSLog(@"AudioQueueAllocateBuffer 成功!!!");
@@ -249,7 +239,7 @@
         NSLog(@"AudioQueueStart 失败!!!");
     }
     
-    NSLog(@"AudioQueueStart 成功!!!");
+    /// NSLog(@"AudioQueueStart 成功!!!");
     
     /// 标记start始成功
     _started = YES;
@@ -279,14 +269,30 @@
         return;
     }
 
-    if (_audioQueue) {
-        OSStatus status= AudioQueueStop(_audioQueue, true);
-        if (status!= noErr){
-//            [self.audioProperty error:LLYAudioError_AQ_StopFail];
-            return;
-        }
-    }
+     OSStatus status= AudioQueueStop(_audioQueue, true);
+     if (status!= noErr){
+        //   [self.audioProperty error:LLYAudioError_AQ_StopFail];
+        return;
+     }
 }
+
+/// 重置
+- (void)reset
+{
+    if (!_audioQueue) {
+        NSLog(@"audioQueue is null!!!");
+        return;
+    }
+
+    OSStatus status = AudioQueueReset(_audioQueue);
+    if (status!= noErr){
+       //   [self.audioProperty error:LLYAudioError_AQ_StopFail];
+       return;
+    }
+    
+    NSLog(@"reset, status: %d", status);
+}
+
 
 - (void)playData:(NSData *)data
        inputData:(nonnull const void *)inputData
@@ -418,7 +424,7 @@ packetDescriptions:(AudioStreamPacketDescription *)packetDescriptions
         unsigned int bufIndex = -1;
         for (unsigned int i = 0; i < kNumberOfBuffers; ++i){
             if (inBuffer == audioQueueBuffer[i]){
-               NSLog(@"当前buffer_%d的数据已经播放完了 还给程序继续装数据去吧！！！！！！",i);
+                /// NSLog(@"当前buffer_%d的数据已经播放完了 还给程序继续装数据去吧！！！！！！",i);
                 bufIndex = i;
                 break;
             }

@@ -42,12 +42,12 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, assign, readonly) UInt32 bitRate; /// 速率
 
-- (instancetype)initWithFilePath:(NSString *)path fileLength:(NSInteger )fileLength;
+- (instancetype)initWithFilePath:(NSString *)path fileSize:(NSInteger)fileSize;
 
 - (void)parseData:(NSData *)data;
 
 /// 拖动进度条，需要到几分几秒，而我们实际上操作的是文件，即寻址到第几个字节开始播放音频数据
-- (void)seekToTime:(NSTimeInterval *)newSeekTime;
+- (unsigned long long)seekToTime:(double)newTime;
 
 @end
 

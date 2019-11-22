@@ -39,6 +39,9 @@ NS_ASSUME_NONNULL_BEGIN
 ///  停止
 - (void)stop;
 
+/// 重置
+- (void)reset;
+
 /**
  *  Play audio data, data length must be less than bufferSize.
  *  Will block current thread until the buffer is consumed.
