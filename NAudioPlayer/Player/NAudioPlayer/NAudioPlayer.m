@@ -25,6 +25,9 @@
 //    BOOL _started;
     BOOL _pauseRequired;
     NSTimeInterval _timingOffset;
+    
+    double _seekTime;
+    BOOL _seekWasRequested; /// 标记seek
 }
 
 @property (nonatomic, readwrite) NAudioPlayerStatus status;
@@ -47,6 +50,7 @@
         _isFileStreamExisted = NO;
 //        _started = NO;
         _pauseRequired = NO;
+        _seekWasRequested = NO;
         _filePath = filePath;
         _audioFileHandle = [NSFileHandle fileHandleForReadingAtPath:filePath];
         _fileLength = [[[NSFileManager defaultManager] attributesOfItemAtPath:filePath error:nil] fileSize];
@@ -132,6 +136,13 @@
     [self createAudioFileStream];
 }
 
+- (void)seekToTime:(double)newTime
+{
+    @synchronized (self) {
+        _seekWasRequested = YES;
+    }
+}
+
 /*
  注意两点:
  1. 定时器时间间隔尽量小, 或者用do...while循环
@@ -172,6 +183,13 @@
 //        }
     
         /// NSLog(@"_audioQueue.buffersUsed: %ld", (long)_audioQueue.buffersUsed);
+        
+        /// seek
+        if (_seekWasRequested) {
+            
+            _seekWasRequested = NO;
+        }
+        
         /// pause
         if (self.status == NAudioPlayerStatusPaused) {
             NSLog(@"for 循环 里 暂停播放");

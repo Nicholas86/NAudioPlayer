@@ -70,12 +70,13 @@
 
 - (IBAction)handleProgressSlider:(UISlider *)sender
 {
-    NSLog(@"进度条");
+    NSLog(@"进度条: %.2f", sender.value);
+    double newTime = sender.value * (_player.duration);
+    [_player seekToTime:newTime];
 }
 
 - (void)updateProgress:(NSTimer *)updatedTimer
 {
-    
     if ((_player.bitRate != 0.0) && (_player.duration != 0.0)) {
         double progress = _player.progress;
         double duration = _player.duration;
@@ -88,33 +89,9 @@
             [_progressSlider setEnabled:NO];
         }
     }else{
-        
        // positionLabel.text = @"Time Played:";
 //        NSLog(@"duration: %.2f", duration);
     }
-//    if (_player.bitRate != 0.0)
-//    {
-//        // double progress = _player.progress;
-//        double duration = _player.duration;
-//
-//        if (duration > 0)
-//        {
-//            [positionLabel setText:
-//                [NSString stringWithFormat:@"Time Played: %.1f/%.1f seconds",
-//                    progress,
-//                    duration]];
-//            [progressSlider setEnabled:YES];
-//            [progressSlider setValue:100 * progress / duration];
-//        }
-//        else
-//        {
-//            [progressSlider setEnabled:NO];
-//        }
-//    }
-//    else
-//    {
-//        positionLabel.text = @"Time Played:";
-//    }
 }
 
 #pragma mark - status kvo

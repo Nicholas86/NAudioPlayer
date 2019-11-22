@@ -29,6 +29,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// 音频文件描述信息
 - (instancetype)initWithAudioDesc:(AudioStreamBasicDescription)audioDesc
                 audioFileStreamID:(AudioFileStreamID)audioFileStreamID;
+
 /// 开始
 - (void)start;
 

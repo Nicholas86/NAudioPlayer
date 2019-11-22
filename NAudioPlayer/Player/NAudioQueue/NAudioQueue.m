@@ -48,7 +48,6 @@
     pthread_mutex_t queueBuffersMutex;            // a mutex to protect the inuse flags
     pthread_cond_t queueBufferReadyCondition;    // a condition varable for handling the inuse flags
     bool _started;
-    
 }
 
 @property (nonatomic, assign, readwrite) NSInteger buffersUsed;
@@ -168,24 +167,17 @@
     NSLog(@"packetBufferSize: %d", packetBufferSize);
     
     // allocate audio queue buffers
-    for (unsigned int i = 0; i < kNumberOfBuffers; ++i){
-        status = AudioQueueAllocateBuffer(_audioQueue, packetBufferSize, &audioQueueBuffer[i]);
-        if (status){
-            /// [self failWithErrorCode:AS_AUDIO_QUEUE_BUFFER_ALLOCATION_FAILED];
-            NSLog(@"buffer alloc fail");
-            return;
-        }
-    }
-    
-//    for (int i = 0; i < kNumberOfBuffers; i++) {
-//        status = AudioQueueAllocateBuffer(_audioQueue, kAQBufSize, &audioQueueBuffer[i]);
-//        inUsed[i] = NO; /// 默认都是未使用
-//        if (status != noErr) {
-//            NSLog(@"AudioQueueAllocateBuffer 失败!!!");
-//            continue;
+//    for (unsigned int i = 0; i < kNumberOfBuffers; ++i){
+//        status = AudioQueueAllocateBuffer(_audioQueue, packetBufferSize, &audioQueueBuffer[i]);
+//        if (status){
+//            /// [self failWithErrorCode:AS_AUDIO_QUEUE_BUFFER_ALLOCATION_FAILED];
+//            NSLog(@"buffer alloc fail");
+//            return;
 //        }
 //    }
-//
+    
+    [self createBuffer];
+    
     NSLog(@"AudioQueueAllocateBuffer 成功!!!");
 
     // get the cookie size
@@ -216,8 +208,6 @@
     
     // 设置音量
     AudioQueueSetParameter(_audioQueue, kAudioQueueParam_Volume, 1.0);
-    
-    //// [self createBuffer];
 }
 
 /*
@@ -466,10 +456,6 @@ static void NAudioQueueOutputCallback(void *inUserData, AudioQueueRef inAQ,
                                         AudioQueueBufferRef buffer){
         
     NAudioQueue *_audioQueue = (__bridge NAudioQueue *)inUserData;
-    
-    // OSStatus status;
-    
-//    NSLog(@"audioQueue 回调");
     
     [_audioQueue p_audioQueueOutput:inAQ inBuffer:buffer];
     

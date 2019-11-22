@@ -39,6 +39,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)playWithUrlString:(NSString *)urlString;
 
+- (void)seekToTime:(double)newTime;
+
 @end
 
 NS_ASSUME_NONNULL_END
