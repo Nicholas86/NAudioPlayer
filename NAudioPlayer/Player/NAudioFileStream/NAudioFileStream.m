@@ -16,7 +16,6 @@
 {
 @private
     BOOL _discontinuous;
-//    AudioFileStreamID _audioFileStreamID; ///
     
     SInt64 _dataOffset;
     NSTimeInterval _packetDuration; // 当前已读取了多少个packet
@@ -27,10 +26,6 @@
     UInt64 _processedPacketsSizeTotal;
     
     UInt64 _seekByteOffset;    // Seek offset within the file in bytes
-//    NSTimeInterval _seekTime;
-    
-    NSInteger _inNumberBytes; /// 当前已读取的packet的总文件大小 （这两个变量用来计算平均码率）
-    NSInteger _inNumberPackets; /// 当前已读取了多少个 packet
 }
 
 @property (nonatomic, copy) NSString *path;
@@ -41,11 +36,8 @@
 
 @property (nonatomic, assign, readwrite) AudioFileStreamID audioFileStreamID;
 
-//@property (nonatomic, strong) NSFileHandle *audioFileHandle;
-//@property (nonatomic, strong) NSData *audioFileData; // 每次读取到的文件数据
-
-//@property (nonatomic, assign) unsigned long long fileSize;
 @property (nonatomic, assign, readwrite) NSTimeInterval duration; /// 时长
+
 @property (nonatomic, assign, readwrite) UInt32 bitRate; /// 速率
 
 @property (nonatomic, assign) UInt32 maxPacketSize;
@@ -168,17 +160,21 @@
 }
 
 #pragma mark - open & close
-- (void)_closeAudioFileStream
-{
-    if (self.available) {
-        AudioFileStreamClose(_audioFileStreamID);
-        _audioFileStreamID = NULL;
-    }
-}
-
 - (void)close
 {
-    [self _closeAudioFileStream];
+    if (!_audioFileStreamID) {
+        NSLog(@"audioFileStreamID is null");
+        return;
+    }
+     
+    OSStatus status = AudioFileStreamClose(_audioFileStreamID);
+    
+    if (status != noErr) {
+        NSLog(@"AudioFileStreamClose 失败");
+        return;
+    }
+    
+    _audioFileStreamID = NULL;
 }
 
 /// 音频文件读取速率
@@ -229,8 +225,6 @@
 
 - (void)handleAudioFileStreamProperty:(AudioFileStreamPropertyID)propertyID
 {
-//    NSLog(@"handleAudioFileStreamProperty: %d", propertyID);
-
     if (propertyID == kAudioFileStreamProperty_ReadyToProducePackets) {
         /*
          该属性告诉我们，已经解析到完整的音频帧数据，准备产生音频帧，之后会调用到另外一个回调函数。之后便是音频数据帧的解析。
@@ -364,40 +358,13 @@
         return;
     }
     
-//    NSLog(@">>>>>>> handleAudioFileStreamPackets <<<<<<<");
-
-//    BOOL deletePackDesc = NO;
-    
-//    if (packetDescriptions == NULL) {
-//        NSLog(@"packetDescriptions is null");
-//        deletePackDesc = YES;
-//        UInt32 packetSize = inNumberBytes / inNumberPackets;
-//        AudioStreamPacketDescription *descriptions = (AudioStreamPacketDescription *)malloc(sizeof(AudioStreamPacketDescription)*inNumberPackets);
-//        for (int i = 0; i < inNumberPackets; i++) {
-//            UInt32 packetOffset = packetSize * i;
-//            descriptions[i].mStartOffset  = packetOffset;
-//            descriptions[i].mVariableFramesInPacket = 0;
-//            if (i == inNumberPackets-1) {
-//                descriptions[i].mDataByteSize = inNumberPackets-packetOffset;
-//            }else{
-//                descriptions[i].mDataByteSize = packetSize;
-//            }
-//        }
-//        packetDescriptions = descriptions;
-//    }
-    
     if (packetDescriptions == NULL) {
         NSLog(@"packetDescriptions is null");
         return;
     }
     
-    _inNumberBytes += inNumberBytes; /// 当前已读取的packet的总文件大小 （这两个变量用来计算平均码率）
-    _inNumberPackets += inNumberPackets; /// 当前已读取了多少个 packet
-    
-    for (int i = 0; i < inNumberPackets; ++i)
-    {
-        if (_processedPacketsCount < BitRateEstimationMaxPackets)
-        {
+    for (int i = 0; i < inNumberPackets; ++i){
+        if (_processedPacketsCount < BitRateEstimationMaxPackets){
             _processedPacketsSizeTotal += packetDescriptions[i].mDataByteSize;
             _processedPacketsCount += 1;
             [self calculateBitRate];
@@ -408,7 +375,7 @@
     NSData *data = [NSData dataWithBytes:inputData length:inNumberBytes];
     
     if (self.delegate && [self.delegate respondsToSelector:@selector(audioStream_packetsWithAudioFileStream:data:inputData:inNumberBytes:inNumberPackets:inPacketDescrrptions:)]) {
-        [self.delegate audioStream_packetsWithAudioFileStream:self
+        [self.delegate audioStream_packetsWithAudioFileStream:nil
                                                          data:data
                                                     inputData:inputData
                                                 inNumberBytes:inNumberBytes

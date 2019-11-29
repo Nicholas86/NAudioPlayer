@@ -20,7 +20,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @required
 ///// 解析音频数据帧
-- (void)audioStream_packetsWithAudioFileStream:(NAudioFileStream *)audioFileStream
+- (void)audioStream_packetsWithAudioFileStream:(nullable NAudioFileStream *)audioFileStream
                                           data:(NSData *)data
                                      inputData:(const void *)inputData
                                  inNumberBytes:(UInt32)inNumberBytes
@@ -48,6 +48,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 拖动进度条，需要到几分几秒，而我们实际上操作的是文件，即寻址到第几个字节开始播放音频数据
 - (unsigned long long)seekToTime:(double)newTime;
+
+- (void)close;
 
 @end
 

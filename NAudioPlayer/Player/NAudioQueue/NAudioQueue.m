@@ -10,10 +10,8 @@
 #import "NAudioSession.h"
 #include <pthread.h>
 
-#define kNumberOfBuffers 3              //AudioQueueBuffer数量，一般指明为3
-#define kAQBufSize 128 * 1024        //每个AudioQueueBuffer的大小 128 * 1024
-
-#define Size_DefaultBufferSize 10 * 2048 // 默认缓冲区大小
+#define kNumberOfBuffers 3              // AudioQueueBuffer数量，一般指明为3
+#define kAQBufSize 10 * 1024        // 每个AudioQueueBuffer须要开辟的缓冲区的大小 10 * 1024
 
 #define BitRateEstimationMaxPackets 5000
 
@@ -36,11 +34,10 @@
                                 // time)
     double packetDuration;        // sample rate times frames per packet
     UInt32 packetBufferSize;
-    size_t bytesFilled;                // how many bytes have been filled
+    UInt32 bytesFilled;                // how many bytes have been filled
     bool inuse[kNumberOfBuffers];            // flags to indicate that a buffer is still in use
-    /// NSInteger buffersUsed;
     unsigned int fillBufferIndex;    // the index of the audioQueueBuffer that is being filled
-    size_t packetsFilled;            // how many packets have been filled
+    UInt32 packetsFilled;            // how many packets have been filled
     UInt64 processedPacketsCount;        // number of packets accumulated for bitrate estimation
     UInt64 processedPacketsSizeTotal;    // byte size of accumulated estimation packets
     AudioStreamPacketDescription packetDescs[kAQMaxPacketDescs];    // packet descriptions for enqueuing audio
@@ -49,8 +46,6 @@
     pthread_cond_t queueBufferReadyCondition;    // a condition varable for handling the inuse flags
     bool _started;
 }
-
-@property (nonatomic, assign, readwrite) NSInteger buffersUsed;
 
 /// 该属性指明了音频数据的格式信息，返回的数据是一个AudioStreamBasicDescription结构
 @property (nonatomic, assign, readwrite) AudioStreamBasicDescription audioStreamBasicDescription;
@@ -64,23 +59,6 @@
 @end
 
 @implementation NAudioQueue
-
-- (instancetype)initWithFilePath:(NSString *)filePath
-{
-    self = [super init];
-    if (self) {
-        
-    }return self;
-}
-
-- (instancetype)init
-{
-    self = [super init];
-    if (self) {
-        [self createAudioSession];
-    }return self;
-}
-
 /// 音频文件描述信息
 - (instancetype)initWithAudioDesc:(AudioStreamBasicDescription)audioDesc
                 audioFileStreamID:(AudioFileStreamID)audioFileStreamID
@@ -101,7 +79,7 @@
 
 - (void)createAudioSession
 {
-    [[NAudioSession sharedInstance] setCategory:AVAudioSessionModeMoviePlayback]; /// 支持视频、音频播放
+    [[NAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback]; /// 支持视频、音频播放
     [[NAudioSession sharedInstance] setPreferredSampleRate:44100];
     [[NAudioSession sharedInstance] setActive:YES];
     [[NAudioSession sharedInstance] addRouteChangeListener];
@@ -230,7 +208,7 @@
         NSLog(@"audioQueue is null!!!");
         return;
     }
-    
+  
     OSStatus status;
     /// 队列处理开始，此后系统开始自动调用回调(Callback)函数
     status = AudioQueueStart(_audioQueue, nil);
@@ -248,6 +226,8 @@
 /// 暂停
 - (void)pause
 {
+    _started = NO;
+
     if (!_audioQueue) {
         NSLog(@"audioQueue is null!!!");
         return;
@@ -264,21 +244,27 @@
 /// 停止
 - (void)stop
 {
+    _started = NO;
+
     if (!_audioQueue) {
         NSLog(@"audioQueue is null!!!");
         return;
     }
 
-     OSStatus status= AudioQueueStop(_audioQueue, true);
+     OSStatus status= AudioQueueStop(_audioQueue, YES);
      if (status!= noErr){
         //   [self.audioProperty error:LLYAudioError_AQ_StopFail];
         return;
      }
+
+    NSLog(@"stop, status: %d, _started: %d", status, _started);
 }
 
 /// 重置
 - (void)reset
 {
+    _started = NO;
+
     if (!_audioQueue) {
         NSLog(@"audioQueue is null!!!");
         return;
@@ -293,6 +279,36 @@
     NSLog(@"reset, status: %d", status);
 }
 
+/// 销毁
+- (void)dispose
+{
+    if (!_audioQueue) {
+       NSLog(@"audioQueue is null!!!");
+       return;
+    }
+
+   OSStatus status = AudioQueueDispose(_audioQueue, YES);
+   if (status!= noErr){
+      //   [self.audioProperty error:LLYAudioError_AQ_StopFail];
+      return;
+   }
+       
+   NSLog(@"dispose, status: %d", status);
+}
+
+/// 回收buffer
+- (void)freeBuffer
+{
+    for (NSInteger i = 0; i < kNumberOfBuffers; i++) {
+        OSStatus status = AudioQueueFreeBuffer(_audioQueue, audioQueueBuffer[i]);
+        if (status!= noErr){
+            //   [self.audioProperty error:LLYAudioError_AQ_StopFail];
+            return;
+        }
+        NSLog(@"freeBuffer, status: %d", status);
+    }
+}
+
 
 - (void)playData:(NSData *)data
        inputData:(nonnull const void *)inputData
@@ -302,44 +318,36 @@ packetDescriptions:(AudioStreamPacketDescription *)packetDescriptions
 {
     [_lock lock];
     
-    if (packetDescriptions == NULL) {
-        NSLog(@"packetDescriptions is null");
+    if (inputData == NULL) {
+        NSLog(@"inputData is null");
+        [_lock unlock];
+        return;
     }
     
-//    NSLog(@"data length: %lu, inNumberPackets: %d", [data length], inNumberPackets); /// 2048
-    
-    OSStatus status;
-    
+    if (packetDescriptions == NULL) {
+        NSLog(@"packetDescriptions is null");
+        [_lock unlock];
+        return;
+    }
+        
     for (int i = 0; i < inNumberPackets; ++i) {
-        /// 获取 AudioStreamPacketDescription对象
+       /// 获取 AudioStreamPacketDescription对象
         AudioStreamPacketDescription packetDesc = packetDescriptions[i];
         SInt64 packetOffset = packetDesc.mStartOffset;
-        SInt64 packetSize = packetDesc.mDataByteSize;
-        size_t bufSpaceRemaining;
+        UInt32 packetSize = packetDesc.mDataByteSize;
         
-//        NSLog(@"processedPacketsCount: %llu", processedPacketsCount);
-//        NSLog(@"packetSize: %llu, packetBufferSize: %d", packetSize, packetBufferSize);
-
-        if (processedPacketsCount < BitRateEstimationMaxPackets) {
-            processedPacketsSizeTotal += packetSize;
-            processedPacketsCount += 1;
-        }
-        
-        @synchronized (self) {
+        if ((packetSize + bytesFilled) >= packetBufferSize) {
+            /*
+             该方法用于将已经填充数据的AudioQueueBuffer入队到AudioQueue
+            */
+            NSLog(@"当前buffer_%u已经满了，送给audioqueue去播吧",(unsigned int)fillBufferIndex);
             
-            if (packetSize > packetBufferSize) {
-                NSLog(@"fuffer too small");
-            }
-            
-            bufSpaceRemaining = packetBufferSize - bytesFilled;
-        }
-        
-        if (bufSpaceRemaining < packetSize) {
-//            NSLog(@"bufSpaceRemaining < packetSize。bufSpaceRemaining:%zu, packetSize:%lld", bufSpaceRemaining, packetSize);
-
             [self enqueueBuffer];
         }
         
+        NSLog(@"给当前buffer_%u填装数据中",(unsigned int)fillBufferIndex);
+        
+        /// 给当前buffer填充数据
         @synchronized(self)
         {
             // If there was some kind of issue with enqueueBuffer and we didn't
@@ -351,6 +359,7 @@ packetDescriptions:(AudioStreamPacketDescription *)packetDescriptions
             // copy data to the audio queue buffer
             AudioQueueBufferRef fillBuf = audioQueueBuffer[fillBufferIndex];
             memcpy((char*)fillBuf->mAudioData + bytesFilled, (const char*)inputData + packetOffset, packetSize);
+            fillBuf->mAudioDataByteSize = bytesFilled + packetSize;
 
             // fill out packet description
             packetDescs[packetsFilled] = packetDescriptions[i];
@@ -359,39 +368,33 @@ packetDescriptions:(AudioStreamPacketDescription *)packetDescriptions
             bytesFilled += packetSize;
             packetsFilled += 1;
         }
-        
-        // if that was the last free packet description, then enqueue the buffer.
-        size_t packetsDescsRemaining = kAQMaxPacketDescs - packetsFilled;
-        if (packetsDescsRemaining == 0) {
-            [self enqueueBuffer];
-        }
-        
     }
+    
     [_lock unlock];
 }
 
 - (void)enqueueBuffer
 {
     @synchronized(self){
-        inuse[fillBufferIndex] = true;        // set in use flag
-        _buffersUsed++;
+        inuse[fillBufferIndex] = YES;
         OSStatus status;
-        // enqueue buffer
         AudioQueueBufferRef fillBuf = audioQueueBuffer[fillBufferIndex];
-        fillBuf->mAudioDataByteSize = bytesFilled;
-        if (packetsFilled){
+        if (packetsFilled > 0){
             status = AudioQueueEnqueueBuffer(_audioQueue, fillBuf, packetsFilled, packetDescs);
         }else{
             status = AudioQueueEnqueueBuffer(_audioQueue, fillBuf, 0, NULL);
         }
         
-//        NSLog(@"buffersUsed: %ld", (long)buffersUsed);
+        if (status != noErr) {
+            NSLog(@"enqueueBuffer error, status: %d", status);
+            return;
+        }
         
-        if (_buffersUsed == kNumberOfBuffers - 1){
-//             status = AudioQueueStart(_audioQueue, NULL);
-//            NSLog(@"播放开始, status: %d", status);
+        if (!_started) {
+            NSLog(@"播放开始, status: %d, fillBufferIndex: %u", status, fillBufferIndex);
             [self start];
         }
+        
         // go to next buffer
         if (++fillBufferIndex >= kNumberOfBuffers) fillBufferIndex = 0;
         bytesFilled = 0;        // reset bytes filled
@@ -419,8 +422,7 @@ packetDescriptions:(AudioStreamPacketDescription *)packetDescriptions
             }
         }
         
-        if (bufIndex == -1)
-        {
+        if (bufIndex == -1){
             // [self failWithErrorCode:AS_AUDIO_QUEUE_BUFFER_MISMATCH];
             pthread_mutex_lock(&queueBuffersMutex);
             pthread_cond_signal(&queueBufferReadyCondition);
@@ -431,15 +433,6 @@ packetDescriptions:(AudioStreamPacketDescription *)packetDescriptions
         // signal waiting thread that the buffer is free.
         pthread_mutex_lock(&queueBuffersMutex);
         inuse[bufIndex] = false;
-        _buffersUsed--;
-
-    //
-    //  Enable this logging to measure how many buffers are queued at any time.
-    //
-    #if LOG_QUEUED_BUFFERS
-        NSLog(@"Queued buffers: %ld", buffersUsed);
-    #endif
-        
         pthread_cond_signal(&queueBufferReadyCondition);
         pthread_mutex_unlock(&queueBuffersMutex);
 }
@@ -449,106 +442,33 @@ packetDescriptions:(AudioStreamPacketDescription *)packetDescriptions
  */
 static void NAudioQueueOutputCallback(void *inUserData, AudioQueueRef inAQ,
                                         AudioQueueBufferRef buffer){
-        
     NAudioQueue *_audioQueue = (__bridge NAudioQueue *)inUserData;
-    
-    [_audioQueue p_audioQueueOutput:inAQ inBuffer:buffer];
-    
-    /*
-    /// 读取包数据
-    UInt32 numBytes = buffer->mAudioDataBytesCapacity;
-    UInt32 numPackets = _audioQueue->numPacketsToRead;
-    
-    status = AudioFileReadPacketData(_audioQueue->audioFileID, NO, &numBytes, _audioQueue->packetDescs, _audioQueue->packetIndex,&numPackets, buffer->mAudioData);
-    
-    if (status != noErr) {
-        NSLog(@"AudioFileReadPackets 失败");
-        return;
+    if (_audioQueue != nil) {
+        [_audioQueue p_audioQueueOutput:inAQ inBuffer:buffer];
     }
-    
-    NSLog(@"读取包数据, status: %d", status);
-    
-    //成功读取时
-    if (numPackets>0) {
-        //将缓冲的容量设置为与读取的音频数据一样大小(确保内存空间)
-        buffer->mAudioDataByteSize = numBytes;
-        //完成给队列配置缓存的处理
-        status = AudioQueueEnqueueBuffer(_audioQueue->audioQueue, buffer, numPackets, _audioQueue->packetDescs);
-        //移动包的位置
-        _audioQueue->packetIndex += numPackets;
-        
-        /// 标识播放状态
-        _audioQueue.playing = YES;
-    }
-     */
 }
-
 
 static void ASAudioQueueIsRunningCallback(void *inUserData, AudioQueueRef inAQ, AudioQueuePropertyID inID)
 {
-    NAudioQueue *_streamer = (__bridge NAudioQueue *)inUserData;
-    [_streamer handlePropertyChangeForQueue:inAQ propertyID:inID];
+    NAudioQueue *_audioQueue = (__bridge NAudioQueue *)inUserData;
+    if (_audioQueue != nil) {
+        [_audioQueue handlePropertyChangeForQueue:inAQ propertyID:inID];
+    }
 }
 
 - (void)handlePropertyChangeForQueue:(AudioQueueRef)inAQ
     propertyID:(AudioQueuePropertyID)inID
 {
     @autoreleasepool {
-//        if (![[NSThread currentThread] isEqual:internalThread])
-//        {
-//            [self
-//                performSelector:@selector(handlePropertyChange:)
-//                onThread:internalThread
-//                withObject:[NSNumber numberWithInt:inID]
-//                waitUntilDone:NO
-//                modes:[NSArray arrayWithObject:NSDefaultRunLoopMode]];
-//            return;
-//        }
-        @synchronized(self)
-        {
-            if (inID == kAudioQueueProperty_IsRunning)
-            {
+        @synchronized(self){
+            if (inID == kAudioQueueProperty_IsRunning){
                 UInt32 isRunning = 0;
                 UInt32 size = sizeof(UInt32);
                 AudioQueueGetProperty(_audioQueue, inID, &isRunning, &size);
-                NSLog(@"监听audioQueue播放状态");
-//                if (state == AS_STOPPING)
-//                {
-//                    // Should check value of isRunning to ensure this kAudioQueueProperty_IsRunning isn't
-//                    // the *start* of a very short stream
-//                    UInt32 isRunning = 0;
-//                    UInt32 size = sizeof(UInt32);
-//                    AudioQueueGetProperty(audioQueue, inID, &isRunning, &size);
-//                    if (isRunning == 0)
-//                    {
-//                        self.state = AS_STOPPED;
-//                    }
-//                }
-//                else if (state == AS_WAITING_FOR_QUEUE_TO_START)
-//                {
-//                    //
-//                    // Note about this bug avoidance quirk:
-//                    //
-//                    // On cleanup of the AudioQueue thread, on rare occasions, there would
-//                    // be a crash in CFSetContainsValue as a CFRunLoopObserver was getting
-//                    // removed from the CFRunLoop.
-//                    //
-//                    // After lots of testing, it appeared that the audio thread was
-//                    // attempting to remove CFRunLoop observers from the CFRunLoop after the
-//                    // thread had already deallocated the run loop.
-//                    //
-//                    // By creating an NSRunLoop for the AudioQueue thread, it changes the
-//                    // thread destruction order and seems to avoid this crash bug -- or
-//                    // at least I haven't had it since (nasty hard to reproduce error!)
-//                    //
-//                    [NSRunLoop currentRunLoop];
-//
-//                    self.state = AS_PLAYING;
-//                }
-//                else
-//                {
-//                    NSLog(@"AudioQueue changed state in unexpected way.");
-//                }
+                NSLog(@"监听audioQueue播放状态, _started: %d, isRunning: %d", _started, isRunning);
+                if (!isRunning) {
+                    _started = NO;
+                }
             }
         }
     }
@@ -557,20 +477,29 @@ static void ASAudioQueueIsRunningCallback(void *inUserData, AudioQueueRef inAQ, 
 #pragma mark - property
 - (NSTimeInterval)playedTime
 {
-    if (_audioStreamBasicDescription.mSampleRate == 0)
-    {
+    if (_audioStreamBasicDescription.mSampleRate == 0) {
         return 0;
     }
     
     AudioTimeStamp time;
     OSStatus status = AudioQueueGetCurrentTime(_audioQueue, NULL, &time, NULL);
-    if (status == noErr)
-    {
+    if (status == noErr) {
         _playedTime = time.mSampleTime / _audioStreamBasicDescription.mSampleRate;
     }
     
     return _playedTime;
 }
 
+- (void)dealloc
+{
+    [self dispose];
+    _started = NO;
+    currBufferIndex = 0;
+    currBufferFillOffset = 0;
+    currBufferPacketCount = 0;
+    _audioFileStreamID = nil;
+    _playedTime = 0;
+    _audioQueue = NULL;
+}
 
 @end

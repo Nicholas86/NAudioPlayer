@@ -9,20 +9,15 @@
 #import "NAudioPlayer.h"
 #import "NAudioFileStream.h"
 #import "NAudioQueue.h"
-#import "NAudioBuffer.h"
 #import "NAudioSession.h"
 
 #define kAudioFileBufferSize 5120   //文件读取数据的缓冲区大小
 
 @interface NAudioPlayer ()<NAudioFileStreamDelegate>{
-    NAudioBuffer *_buffer;
     NSThread *_thread;
-    NSTimer *_timer;
     
-    BOOL _isFileStreamExisted;
     unsigned long long  _fileSize;        // Length of the file in bytes
     
-//    BOOL _started;
     BOOL _pauseRequired;
     NSTimeInterval _timingOffset;
     
@@ -47,8 +42,6 @@
     self = [super init];
     if (self) {
         _status = NAudioPlayerStatusStopped;
-        _isFileStreamExisted = NO;
-//        _started = NO;
         _pauseRequired = NO;
         _seekWasRequested = NO;
         _filePath = filePath;
@@ -67,18 +60,7 @@
 
 - (void)play
 {
-//    if (!_started) {
-//        _started = YES;
-//        _thread = [[NSThread alloc] initWithTarget:self selector:@selector(threadMain) object:nil];
-//        [_thread start];
-//    }else{
-//        if (self.status == NAudioPlayerStatusPaused || _pauseRequired) {
-//            _pauseRequired = NO;
-//            [_audioQueue start];
-//        }
-//    }
     if (self.status == NAudioPlayerStatusStopped) {
-//        _started = YES;
         /// 更新播放状态: 等待播放
         [self setStatusInternal:(NAudioPlayerStatusWaiting)];
         _thread = [[NSThread alloc] initWithTarget:self selector:@selector(threadMain) object:nil];
@@ -115,7 +97,7 @@
     
     if (self.status == NAudioPlayerStatusWaiting || self.status == NAudioPlayerStatusPlaying) {
         NSLog(@"停止播放");
-        /// 更新播放状态: NAudioPlayerStatusPaused
+        /// 更新播放状态: NAudioPlayerStatusStopped
         [self setStatusInternal:NAudioPlayerStatusStopped];
         [self.audioQueue stop];
     }
@@ -151,14 +133,15 @@
  */
 - (void)threadMain
 {
+    /// 创建文件解析对象
+    if (!_audioFileStream) {
+       [self createAudioFileStream];
+    }
+    
     do {
-        /// NSLog(@"do。。。");
-        /// 创建文件解析对象
-        if (!_audioFileStream) {
-           [self createAudioFileStream];
-        }
-
-//        /// pause
+       //  NSLog(@"do。。。");
+        
+        /// pause
 //        if (_pauseRequired) {
 //            [self setStatusInternal:NAudioPlayerStatusPaused];
 //            [self.audioQueue pause];
@@ -184,32 +167,30 @@
             NSLog(@"for 循环 里 暂停播放");
             [self setStatusInternal:NAudioPlayerStatusStopped];
             [self.audioQueue pause];
-//            _pauseRequired = NO;
         }
         
         /// play
-        [self _play];
-//        if (_started) {
-//            [self handleTask];
-//        }
-    
-//        if (_started) {
-//            [self handleTask];
-//        }
+        if (self.status == NAudioPlayerStatusWaiting || self.status == NAudioPlayerStatusPlaying) {
+            [self _play];
+        }
+        
     } while (self.status != NAudioPlayerStatusStopped);
+    
+    [_audioFileStream close];
+    [self.audioFileHandle closeFile];
 }
 
 - (void)_play
 {
-    /// NSLog(@"定时器循环");
-//    /// 更新播放状态: 等待播放
-//    [self setStatusInternal:(NAudioPlayerStatusWaiting)];
-
-    if (self.status == NAudioPlayerStatusWaiting || self.status == NAudioPlayerStatusPlaying) {
-        /// 外部读的数据比内部多
-       NSData *data = [self.audioFileHandle readDataOfLength:kAudioFileBufferSize];
-       [_audioFileStream parseData:data]; /// 解析数据
+    /// 更新播放状态: 等待播放
+    /// [self setStatusInternal:(NAudioPlayerStatusWaiting)];
+    /// 外部读的数据比内部多
+    NSData *data = [self.audioFileHandle readDataOfLength:kAudioFileBufferSize];
+    if ((data == nil) || ([data length] == 0)) {
+        [self stop];
+        return;
     }
+    [_audioFileStream parseData:data]; /// 解析数据
 }
 
 #pragma mark NAudioFileStreamDelegate
@@ -224,13 +205,13 @@
 }
 
 /// 解析音频数据帧并播放
-- (void)audioStream_packetsWithAudioFileStream:(NAudioFileStream *)audioFileStream
+- (void)audioStream_packetsWithAudioFileStream:(nullable NAudioFileStream *)audioFileStream
                                           data:(NSData *)data
                                      inputData:(nonnull const void *)inputData
                                  inNumberBytes:(UInt32)inNumberBytes
                                inNumberPackets:(UInt32)inNumberPackets inPacketDescrrptions:(nonnull AudioStreamPacketDescription *)inPacketDescrrptions
 {
-    NSLog(@">>>>>>>>>>>> 解析音频数据帧(%ld)---- 开始播放 <<<<<<<<<<<<<<", [data length]);
+    /// NSLog(@">>>>>>>>>>>> 解析音频数据帧(%ld)---- 开始播放 <<<<<<<<<<<<<<", [data length]);
     if (!_audioQueue) {
         NSLog(@"_audioQueue is null");
         return;
