@@ -13,37 +13,33 @@
 #define kNumberOfBuffers 3              // AudioQueueBuffer数量，一般指明为3
 #define kAQBufSize 10 * 1024        // 每个AudioQueueBuffer须要开辟的缓冲区的大小 10 * 1024
 
-#define BitRateEstimationMaxPackets 5000
+#define kAQMaxPacketDescs 512
 
-#define KNum_Descs 512 //复用的包描述数量
-
-#define kAQMaxPacketDescs 512    // Number of packet descriptions in our array
+#define kAQDefaultBufSize 2048    // 每个buffer装的bytes
 
 @interface NAudioQueue ()
 {
     AudioQueueBufferRef audioQueueBuffer[kNumberOfBuffers];
     NSLock *_lock; /// 锁
     BOOL inUsed[kNumberOfBuffers];//标记当前buffer是否正在被使用
-    UInt32 currBufferIndex;//当前使用的buffer的索引
+    UInt32 currBufferIndex; //当前使用的buffer的索引
     UInt32 currBufferFillOffset;//当前buffer已填充的数据量
     UInt32 currBufferPacketCount;//当前是第几个packet,  当前填充了多少帧
-    AudioStreamPacketDescription audioStreamPacketDesc[KNum_Descs];
     
-    double sampleRate;            // Sample rate of the file (used to compare with
-                                // samples played by the queue for current playback
-                                // time)
-    double packetDuration;        // sample rate times frames per packet
+    double sampleRate;
+                                
+    double packetDuration;
     UInt32 packetBufferSize;
-    UInt32 bytesFilled;                // how many bytes have been filled
-    bool inuse[kNumberOfBuffers];            // flags to indicate that a buffer is still in use
-    unsigned int fillBufferIndex;    // the index of the audioQueueBuffer that is being filled
-    UInt32 packetsFilled;            // how many packets have been filled
-    UInt64 processedPacketsCount;        // number of packets accumulated for bitrate estimation
-    UInt64 processedPacketsSizeTotal;    // byte size of accumulated estimation packets
-    AudioStreamPacketDescription packetDescs[kAQMaxPacketDescs];    // packet descriptions for enqueuing audio
+    UInt32 bytesFilled;
+    bool inuse[kNumberOfBuffers];
+    unsigned int fillBufferIndex;
+    UInt32 packetsFilled;
+    UInt64 processedPacketsCount;
+    UInt64 processedPacketsSizeTotal;
+    AudioStreamPacketDescription packetDescs[kAQMaxPacketDescs];
     
-    pthread_mutex_t queueBuffersMutex;            // a mutex to protect the inuse flags
-    pthread_cond_t queueBufferReadyCondition;    // a condition varable for handling the inuse flags
+    pthread_mutex_t queueBuffersMutex;
+    pthread_cond_t queueBufferReadyCondition;
     bool _started;
 }
 
@@ -87,7 +83,6 @@
 
 - (void)createPthread
 {
-    // initialize a mutex and condition so that we can block on buffers in use.
     pthread_mutex_init(&queueBuffersMutex, NULL);
     pthread_cond_init(&queueBufferReadyCondition, NULL);
 }
@@ -118,8 +113,7 @@
     
     NSLog(@"AudioQueueNewOutput 成功");
 
-    // start the queue if it has not been started already
-    // listen to the "isRunning" property
+    // 监听 isRunning
     status = AudioQueueAddPropertyListener(_audioQueue, kAudioQueueProperty_IsRunning, ASAudioQueueIsRunningCallback, (__bridge void * _Nullable)(self));
     
     if (status) {
@@ -127,9 +121,7 @@
         return;
     }
     
-    #define kAQDefaultBufSize 2048    // Number of bytes in each audio queue buffer
 
-    // get the packet size if it is available
     UInt32 sizeOfUInt32 = sizeof(UInt32);
     status = AudioFileStreamGetProperty(_audioFileStreamID, kAudioFileStreamProperty_PacketSizeUpperBound, &sizeOfUInt32, &packetBufferSize);
     if (status || packetBufferSize == 0)
@@ -137,7 +129,6 @@
         status = AudioFileStreamGetProperty(_audioFileStreamID, kAudioFileStreamProperty_MaximumPacketSize, &sizeOfUInt32, &packetBufferSize);
         if (status || packetBufferSize == 0)
         {
-            // No packet size available, just use the default
             packetBufferSize = kAQDefaultBufSize;
         }
     }
@@ -146,9 +137,6 @@
     
     [self createBuffer];
     
-    NSLog(@"AudioQueueAllocateBuffer 成功!!!");
-
-    // get the cookie size
     UInt32 cookieSize;
     Boolean writable;
     OSStatus ignorableError;
@@ -158,7 +146,6 @@
         return;
     }
 
-    // get the cookie data
     void* cookieData = calloc(1, cookieSize);
     ignorableError = AudioFileStreamGetProperty(_audioFileStreamID, kAudioFileStreamProperty_MagicCookieData, &cookieSize, cookieData);
     if (ignorableError)
@@ -166,7 +153,6 @@
         return;
     }
 
-    // set the cookie on the queue.
     ignorableError = AudioQueueSetProperty(_audioQueue, kAudioQueueProperty_MagicCookie, cookieData, cookieSize);
     free(cookieData);
     if (ignorableError)
@@ -340,31 +326,29 @@ packetDescriptions:(AudioStreamPacketDescription *)packetDescriptions
             /*
              该方法用于将已经填充数据的AudioQueueBuffer入队到AudioQueue
             */
-            NSLog(@"当前buffer_%u已经满了，送给audioqueue去播吧",(unsigned int)fillBufferIndex);
+            /// NSLog(@"当前buffer_%u已经满了，送给audioqueue去播吧",(unsigned int)fillBufferIndex);
             
             [self enqueueBuffer];
         }
         
-        NSLog(@"给当前buffer_%u填装数据中",(unsigned int)fillBufferIndex);
+        /// NSLog(@"给当前buffer_%u填装数据中",(unsigned int)fillBufferIndex);
         
         /// 给当前buffer填充数据
         @synchronized(self)
         {
-            // If there was some kind of issue with enqueueBuffer and we didn't
-            // make space for the new audio data then back out
-            //
-            if (bytesFilled + packetSize > packetBufferSize){
+            /// 应该去播放的
+            if (packetSize + bytesFilled > packetBufferSize){
                 return;
             }
-            // copy data to the audio queue buffer
+            /// 给当前buffer填充数据
             AudioQueueBufferRef fillBuf = audioQueueBuffer[fillBufferIndex];
             memcpy((char*)fillBuf->mAudioData + bytesFilled, (const char*)inputData + packetOffset, packetSize);
             fillBuf->mAudioDataByteSize = bytesFilled + packetSize;
 
-            // fill out packet description
+            // 填充packetDescs
             packetDescs[packetsFilled] = packetDescriptions[i];
             packetDescs[packetsFilled].mStartOffset = bytesFilled;
-            // keep track of bytes filled and packets filled
+            
             bytesFilled += packetSize;
             packetsFilled += 1;
         }
@@ -395,13 +379,12 @@ packetDescriptions:(AudioStreamPacketDescription *)packetDescriptions
             [self start];
         }
         
-        // go to next buffer
+        // 取出下一个buffer
         if (++fillBufferIndex >= kNumberOfBuffers) fillBufferIndex = 0;
-        bytesFilled = 0;        // reset bytes filled
-        packetsFilled = 0;        // reset packets filled
+        bytesFilled = 0;        // 重置 bytesFilled
+        packetsFilled = 0;        // 重置 packetsFilled
     }
 
-    // wait until next buffer is not in use
     pthread_mutex_lock(&queueBuffersMutex);
     while (inuse[fillBufferIndex]){
         pthread_cond_wait(&queueBufferReadyCondition, &queueBuffersMutex);
@@ -416,7 +399,7 @@ packetDescriptions:(AudioStreamPacketDescription *)packetDescriptions
         unsigned int bufIndex = -1;
         for (unsigned int i = 0; i < kNumberOfBuffers; ++i){
             if (inBuffer == audioQueueBuffer[i]){
-                NSLog(@"当前buffer_%d的数据已经播放完了 还给程序继续装数据去吧！！！！！！", i);
+                /// NSLog(@"当前buffer_%d的数据已经播放完了 还给程序继续装数据去吧！！！！！！", i);
                 bufIndex = i;
                 break;
             }
@@ -430,7 +413,6 @@ packetDescriptions:(AudioStreamPacketDescription *)packetDescriptions
             return;
         }
         
-        // signal waiting thread that the buffer is free.
         pthread_mutex_lock(&queueBuffersMutex);
         inuse[bufIndex] = false;
         pthread_cond_signal(&queueBufferReadyCondition);
@@ -466,6 +448,7 @@ static void ASAudioQueueIsRunningCallback(void *inUserData, AudioQueueRef inAQ, 
                 UInt32 size = sizeof(UInt32);
                 AudioQueueGetProperty(_audioQueue, inID, &isRunning, &size);
                 NSLog(@"监听audioQueue播放状态, _started: %d, isRunning: %d", _started, isRunning);
+                /// 监听audioQueue播放状态
                 if (!isRunning) {
                     _started = NO;
                 }

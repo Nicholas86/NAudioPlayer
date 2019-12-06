@@ -153,7 +153,6 @@
         /// seek
         if (_seekWasRequested) {
             NSLog(@"拖动滑块seek了");
-            [self setStatusInternal:(NAudioPlayerStatusStopped)];
             _timingOffset = _seekTime - _audioQueue.playedTime;
             unsigned long long _seekOffset = [_audioFileStream seekToTime:_seekTime];
             [_audioFileHandle seekToFileOffset:_seekOffset];
