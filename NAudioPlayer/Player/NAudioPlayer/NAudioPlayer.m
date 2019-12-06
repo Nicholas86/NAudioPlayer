@@ -181,8 +181,6 @@
 
 - (void)_play
 {
-    /// 更新播放状态: 等待播放
-    /// [self setStatusInternal:(NAudioPlayerStatusWaiting)];
     /// 外部读的数据比内部多
     NSData *data = [self.audioFileHandle readDataOfLength:kAudioFileBufferSize];
     if ((data == nil) || ([data length] == 0)) {
