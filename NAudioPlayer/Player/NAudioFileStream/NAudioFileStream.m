@@ -20,12 +20,12 @@
     SInt64 _dataOffset;
     NSTimeInterval _packetDuration; // 当前已读取了多少个packet
     UInt64 _audioDataByteCount;
-    NSInteger _fileSize;        // Length of the file in bytes
+    NSInteger _fileSize;
 
     UInt64 _processedPacketsCount;
     UInt64 _processedPacketsSizeTotal;
     
-    UInt64 _seekByteOffset;    // Seek offset within the file in bytes
+    UInt64 _seekByteOffset;
 }
 
 @property (nonatomic, copy) NSString *path;

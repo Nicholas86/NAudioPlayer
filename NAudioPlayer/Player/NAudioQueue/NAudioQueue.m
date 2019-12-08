@@ -35,7 +35,6 @@
     unsigned int fillBufferIndex;
     UInt32 packetsFilled;
     UInt64 processedPacketsCount;
-    UInt64 processedPacketsSizeTotal;
     AudioStreamPacketDescription packetDescs[kAQMaxPacketDescs];
     
     pthread_mutex_t queueBuffersMutex;
